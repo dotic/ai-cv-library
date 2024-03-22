@@ -4,10 +4,7 @@ import 'package:native_opencv/native_opencv_platform_interface.dart';
 import 'package:native_opencv/native_opencv_method_channel.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-class MockNativeOpencvPlatform
-    with MockPlatformInterfaceMixin
-    implements NativeOpencvPlatform {
-
+class MockNativeOpencvPlatform with MockPlatformInterfaceMixin implements NativeOpencvPlatform {
   @override
   Future<String?> getPlatformVersion() => Future.value('42');
 }

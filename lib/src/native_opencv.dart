@@ -7,13 +7,14 @@ import 'package:tuple/tuple.dart';
 
 // C function signatures
 typedef _CGetPerspectiveTransformFunc = ffi.Void Function(
-    ffi.Pointer<ffi.Double>,
-    ffi.Pointer<ffi.Double>,
-    ffi.Pointer<ffi.Double>,
-    );
+  ffi.Pointer<ffi.Double>,
+  ffi.Pointer<ffi.Double>,
+  ffi.Pointer<ffi.Double>,
+);
 
 // Dart function signatures
-typedef GetPerspectiveTransformFunc = void Function(ffi.Pointer<ffi.Double>, ffi.Pointer<ffi.Double>, ffi.Pointer<ffi.Double>);
+typedef GetPerspectiveTransformFunc = void Function(
+    ffi.Pointer<ffi.Double>, ffi.Pointer<ffi.Double>, ffi.Pointer<ffi.Double>);
 
 // Loading opencv
 ffi.DynamicLibrary _lib = Platform.isAndroid
@@ -21,7 +22,7 @@ ffi.DynamicLibrary _lib = Platform.isAndroid
     : ffi.DynamicLibrary.process();
 
 // Looking for the functions
-final GetPerspectiveTransformFunc getPerspectiveTransform  = _lib
+final GetPerspectiveTransformFunc getPerspectiveTransform = _lib
     .lookup<ffi.NativeFunction<_CGetPerspectiveTransformFunc>>('get_perspective_transform')
     .asFunction();
 
@@ -36,7 +37,8 @@ ffi.Pointer<ffi.Double> _convertPointsToNative(List<List<int>> points) {
 }
 
 // Wrapper function to call getPerspectiveTransform
-List<List<double>> callGetPerspectiveTransform(List<List<int>> srcPoints, List<List<int>> dstPoints) {
+List<List<double>> callGetPerspectiveTransform(
+    List<List<int>> srcPoints, List<List<int>> dstPoints) {
   final srcPointer = _convertPointsToNative(srcPoints);
   final dstPointer = _convertPointsToNative(dstPoints);
   final matrixPointer = calloc<ffi.Double>(9); // Perspective transform is a 3x3 matrix
@@ -44,8 +46,8 @@ List<List<double>> callGetPerspectiveTransform(List<List<int>> srcPoints, List<L
   getPerspectiveTransform(srcPointer, dstPointer, matrixPointer);
 
   // Convert the resulting matrix back to a Dart list of lists (matrix)
-  List<List<double>> matrix = List.generate(3, (i) =>
-      List.generate(3, (j) => matrixPointer[i * 3 + j]));
+  List<List<double>> matrix =
+      List.generate(3, (i) => List.generate(3, (j) => matrixPointer[i * 3 + j]));
 
   // Free the native memory
   calloc.free(srcPointer);
@@ -54,8 +56,6 @@ List<List<double>> callGetPerspectiveTransform(List<List<int>> srcPoints, List<L
 
   return matrix;
 }
-
-
 
 typedef _CWarpPerspectiveAndGetBufferFunc = ffi.Void Function(
     ffi.Pointer<ffi.Uint8>, // Image data
@@ -69,14 +69,7 @@ typedef _CWarpPerspectiveAndGetBufferFunc = ffi.Void Function(
 
 // Dart function signature
 typedef _WarpPerspectiveAndGetBufferFunc = void Function(
-    ffi.Pointer<ffi.Uint8>,
-    int,
-    int,
-    ffi.Pointer<ffi.Double>,
-    int,
-    int,
-    ffi.Pointer<ffi.Uint8>
-    );
+    ffi.Pointer<ffi.Uint8>, int, int, ffi.Pointer<ffi.Double>, int, int, ffi.Pointer<ffi.Uint8>);
 
 // Looking for the function in the library
 final _WarpPerspectiveAndGetBufferFunc _warpPerspectiveAndGetBuffer = _lib
@@ -94,7 +87,8 @@ List<double> flattenMatrix(List<List<double>> matrix) {
   return matrix.expand((i) => i).toList();
 }
 
-List<List<List<double>>> warpPerspective(Uint8List srcImageData, int srcWidth, int srcHeight, List<List<double>> transformMatrix, int outWidth, int outHeight) {
+List<List<List<double>>> warpPerspective(Uint8List srcImageData, int srcWidth, int srcHeight,
+    List<List<double>> transformMatrix, int outWidth, int outHeight) {
   // Flatten the transformation matrix
   final flatMatrix = flattenMatrix(transformMatrix);
 
@@ -111,16 +105,19 @@ List<List<List<double>>> warpPerspective(Uint8List srcImageData, int srcWidth, i
   final outBufferPtr = calloc<ffi.Uint8>(outWidth * outHeight * 3);
 
   // Call the C++ function to perform the perspective transformation and retrieve the transformed image
-  _warpPerspectiveAndGetBuffer(srcImagePtr, srcWidth, srcHeight, matrixPtr, outWidth, outHeight, outBufferPtr);
+  _warpPerspectiveAndGetBuffer(
+      srcImagePtr, srcWidth, srcHeight, matrixPtr, outWidth, outHeight, outBufferPtr);
 
   // Convert result to Uint8List
   final resultUint8List = outBufferPtr.asTypedList(outWidth * outHeight * 3);
 
   // Build 3D list from transformed image buffer
-  final List<List<List<double>>> image3D = List.generate(outHeight, (_) =>
-      List.generate(outWidth, (_) =>
-          List.generate(3, (_) => 0.0),
-      ),
+  final List<List<List<double>>> image3D = List.generate(
+    outHeight,
+    (_) => List.generate(
+      outWidth,
+      (_) => List.generate(3, (_) => 0.0),
+    ),
   );
 
   for (int y = 0; y < outHeight; y++) {
@@ -140,30 +137,27 @@ List<List<List<double>>> warpPerspective(Uint8List srcImageData, int srcWidth, i
   return image3D;
 }
 
-
-
 // C function signature for finding contours in an image
 typedef _CFindContoursFunc = ffi.Int32 Function(
-    ffi.Pointer<ffi.Uint8>, // Image data
-    ffi.Int32, // Image width
-    ffi.Int32, // Image height
-    ffi.Pointer<ffi.Int32>, // Output buffer for contour data
-    ffi.Int32, // Output buffer size
-    );
+  ffi.Pointer<ffi.Uint8>, // Image data
+  ffi.Int32, // Image width
+  ffi.Int32, // Image height
+  ffi.Pointer<ffi.Int32>, // Output buffer for contour data
+  ffi.Int32, // Output buffer size
+);
 
 // Dart function signature for finding contours
 typedef _FindContoursFunc = int Function(
-    ffi.Pointer<ffi.Uint8>,
-    int,
-    int,
-    ffi.Pointer<ffi.Int32>,
-    int,
-    );
+  ffi.Pointer<ffi.Uint8>,
+  int,
+  int,
+  ffi.Pointer<ffi.Int32>,
+  int,
+);
 
 // Function lookup for findContours in the native library
-final _FindContoursFunc _findContours = _lib
-    .lookup<ffi.NativeFunction<_CFindContoursFunc>>('findContours')
-    .asFunction();
+final _FindContoursFunc _findContours =
+    _lib.lookup<ffi.NativeFunction<_CFindContoursFunc>>('findContours').asFunction();
 
 // Function to find contours in an image mask
 List<List<List<int>>> findContoursInMask(Uint8List srcImageData, int srcWidth, int srcHeight) {
@@ -211,26 +205,23 @@ List<List<List<int>>> findContoursInMask(Uint8List srcImageData, int srcWidth, i
   return contours;
 }
 
-
-
 // C function signature for finding the minimum area rectangle
 typedef _CMinAreaRectFunc = ffi.Void Function(
-    ffi.Pointer<ffi.Int32>, // Points
-    ffi.Int32, // Number of points
-    ffi.Pointer<ffi.Double>, // Output buffer
-    );
+  ffi.Pointer<ffi.Int32>, // Points
+  ffi.Int32, // Number of points
+  ffi.Pointer<ffi.Double>, // Output buffer
+);
 
 // Dart function signature for minAreaRect
 typedef _MinAreaRectFunc = void Function(
-    ffi.Pointer<ffi.Int32>,
-    int,
-    ffi.Pointer<ffi.Double>,
-    );
+  ffi.Pointer<ffi.Int32>,
+  int,
+  ffi.Pointer<ffi.Double>,
+);
 
 // Function lookup for minAreaRect in the native library
-final _MinAreaRectFunc _minAreaRect = _lib
-    .lookup<ffi.NativeFunction<_CMinAreaRectFunc>>('minAreaRect')
-    .asFunction();
+final _MinAreaRectFunc _minAreaRect =
+    _lib.lookup<ffi.NativeFunction<_CMinAreaRectFunc>>('minAreaRect').asFunction();
 
 // Function to find the minimum area rectangle for a given contour
 List<dynamic> minAreaRect(List<List<int>> contour) {
@@ -259,30 +250,27 @@ List<dynamic> minAreaRect(List<List<int>> contour) {
   return [center, size, angle];
 }
 
-
-
 // C function signature for filling a polygon in a mask
 typedef _CFillPolyFunc = ffi.Void Function(
-    ffi.Pointer<ffi.Uint8>, // Mask data
-    ffi.Int32, // Mask width
-    ffi.Int32, // Mask height
-    ffi.Pointer<ffi.Int32>, // Box points
-    ffi.Int32, // Number of points in the box
-    );
+  ffi.Pointer<ffi.Uint8>, // Mask data
+  ffi.Int32, // Mask width
+  ffi.Int32, // Mask height
+  ffi.Pointer<ffi.Int32>, // Box points
+  ffi.Int32, // Number of points in the box
+);
 
 // Dart function signature for fillPoly
 typedef _FillPolyFunc = void Function(
-    ffi.Pointer<ffi.Uint8>,
-    int,
-    int,
-    ffi.Pointer<ffi.Int32>,
-    int,
-    );
+  ffi.Pointer<ffi.Uint8>,
+  int,
+  int,
+  ffi.Pointer<ffi.Int32>,
+  int,
+);
 
 // Function lookup for fillPoly in the native library
-final _FillPolyFunc _fillPoly = _lib
-    .lookup<ffi.NativeFunction<_CFillPolyFunc>>('fillPoly')
-    .asFunction();
+final _FillPolyFunc _fillPoly =
+    _lib.lookup<ffi.NativeFunction<_CFillPolyFunc>>('fillPoly').asFunction();
 
 // Function to fill a polygon in a mask
 List<List<int>> fillPoly(List<List<int>> mask, List<List<double>> box) {
@@ -323,7 +311,6 @@ List<List<int>> fillPoly(List<List<int>> mask, List<List<double>> box) {
   return modifiedMask;
 }
 
-
 // C function signature for image ocr preprocessing
 typedef _CProcessImageFunc = ffi.Void Function(
     ffi.Pointer<ffi.Uint8>, // Image data
@@ -333,17 +320,11 @@ typedef _CProcessImageFunc = ffi.Void Function(
     );
 
 // Dart function signature
-typedef _ProcessImageFunc = void Function(
-    ffi.Pointer<ffi.Uint8>,
-    int,
-    int,
-    ffi.Pointer<ffi.Uint8>
-    );
+typedef _ProcessImageFunc = void Function(ffi.Pointer<ffi.Uint8>, int, int, ffi.Pointer<ffi.Uint8>);
 
 // Looking up the native 'preProcessImage' function from the library
-final _ProcessImageFunc _processImage = _lib
-    .lookup<ffi.NativeFunction<_CProcessImageFunc>>('preProcessImage')
-    .asFunction();
+final _ProcessImageFunc _processImage =
+    _lib.lookup<ffi.NativeFunction<_CProcessImageFunc>>('preProcessImage').asFunction();
 
 Uint8List preProcessImage(Uint8List imageData, int width, int height) {
   // Allocating native memory

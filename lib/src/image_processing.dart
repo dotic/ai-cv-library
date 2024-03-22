@@ -29,8 +29,7 @@ class ImageProcessing {
       List<int> borderColor = const [114, 114, 114],
       bool scaleUp = true}) {
     // Calculate the scaling ratio to maintain proportions
-    double ratio = calculateAspectRatioFit(
-        image.width, image.height, outWidth, outHeight, scaleUp);
+    double ratio = calculateAspectRatioFit(image.width, image.height, outWidth, outHeight, scaleUp);
 
     // Calculate new dimensions
     int newWidth = (image.width * ratio).round();
@@ -38,14 +37,11 @@ class ImageProcessing {
 
     // Resize image
     img.Image resizedImage = img.copyResize(image,
-        width: newWidth,
-        height: newHeight,
-        interpolation: img.Interpolation.linear);
+        width: newWidth, height: newHeight, interpolation: img.Interpolation.linear);
 
     // Create a new image with the desired background color
     img.Image borderedImage = img.Image(width: outWidth, height: outHeight);
-    img.Color colorToFill =
-        img.ColorRgba8(borderColor[0], borderColor[1], borderColor[2], 255);
+    img.Color colorToFill = img.ColorRgba8(borderColor[0], borderColor[1], borderColor[2], 255);
     img.fill(borderedImage, color: colorToFill);
 
     // Calculate positioning for drawing
@@ -55,8 +51,7 @@ class ImageProcessing {
     // Draw resized image on new image with background color
     for (int y = 0; y < newHeight; y++) {
       for (int x = 0; x < newWidth; x++) {
-        borderedImage.setPixel(
-            padLeft + x, padTop + y, resizedImage.getPixel(x, y));
+        borderedImage.setPixel(padLeft + x, padTop + y, resizedImage.getPixel(x, y));
       }
     }
     return borderedImage;
@@ -111,23 +106,18 @@ class ImageProcessing {
       preprocessImageForOcr(img.Image imageInput, Map<String, dynamic> r) {
     // Crop etiquette
     final croppedImage = img.copyCrop(imageInput,
-        x: r["x1"]!,
-        y: r["y1"]!,
-        width: r["x2"]! - r["x1"]!,
-        height: r["y2"]! - r["y1"]!);
+        x: r["x1"]!, y: r["y1"]!, width: r["x2"]! - r["x1"]!, height: r["y2"]! - r["y1"]!);
 
     // Convert to matrix and preprocess
     List<List<List<int>>> imageInputList = convertImageToMatrix(croppedImage)
-        .map((list2D) => list2D
-            .map((list1D) =>
-                list1D.map((value) => (value * 255).toInt()).toList())
-            .toList())
+        .map((list2D) =>
+            list2D.map((list1D) => list1D.map((value) => (value * 255).toInt()).toList()).toList())
         .toList();
 
     // Apply preprocess CLAHE, detail enhance, gray scale, bilateral filter
     Uint8List imageData = convertImageToUint8List(imageInputList);
-    Uint8List processedImageData = cv2.preProcessImage(
-        imageData, imageInputList[0].length, imageInputList.length);
+    Uint8List processedImageData =
+        cv2.preProcessImage(imageData, imageInputList[0].length, imageInputList.length);
     List<List<List<double>>> dataImageUp = convertUint8ListTo3DList(
         processedImageData, imageInputList[0].length, imageInputList.length);
 
@@ -146,16 +136,13 @@ class ImageProcessing {
         : 1.0;
     int resizeH = math.max((h * ratio).toInt() ~/ 32 * 32, 32);
     int resizeW = math.max((w * ratio).toInt() ~/ 32 * 32, 32);
-    final imageInputResized =
-        img.copyResize(croppedImage, width: resizeW, height: resizeH);
+    final imageInputResized = img.copyResize(croppedImage, width: resizeW, height: resizeH);
 
-    List<List<List<double>>> imageInputResizedList =
-        convertImageToMatrix(imageInputResized)
-            .map((list2D) => list2D
-                .map((list1D) =>
-                    list1D.map((value) => (value * 255).toDouble()).toList())
-                .toList())
-            .toList();
+    List<List<List<double>>> imageInputResizedList = convertImageToMatrix(imageInputResized)
+        .map((list2D) => list2D
+            .map((list1D) => list1D.map((value) => (value * 255).toDouble()).toList())
+            .toList())
+        .toList();
 
     // Normalize image
     double ratioH = resizeH / h.toDouble();
@@ -172,16 +159,13 @@ class ImageProcessing {
         [0.229, 0.224, 0.225]
       ]
     ];
-    List<List<List<double>>> dataImage =
-        processImage(imageInputResizedList, scale, mean, std);
+    List<List<List<double>>> dataImage = processImage(imageInputResizedList, scale, mean, std);
 
     // Convert channels
-    List<List<List<double>>> dataImageCHW =
-        convertChannelsLastToChannelsFirst(dataImage)
-            .map((list2D) => list2D
-                .map((list) => list.map((item) => item.toDouble()).toList())
-                .toList())
-            .toList();
+    List<List<List<double>>> dataImageCHW = convertChannelsLastToChannelsFirst(dataImage)
+        .map(
+            (list2D) => list2D.map((list) => list.map((item) => item.toDouble()).toList()).toList())
+        .toList();
 
     return Tuple3(imageInputList, dataImageCHW, dataShape);
   }
@@ -209,8 +193,8 @@ class ImageProcessing {
   // Convert a Uint8List back into a 3D list structure representing an image
   static List<List<List<double>>> convertUint8ListTo3DList(
       Uint8List imageData, int width, int height) {
-    List<List<List<double>>> image = List.generate(height,
-        (_) => List.generate(width, (_) => List.generate(1, (_) => 0.0)));
+    List<List<List<double>>> image =
+        List.generate(height, (_) => List.generate(width, (_) => List.generate(1, (_) => 0.0)));
 
     // Iterate over the Uint8List and populate the 3D list
     for (int y = 0; y < height; y++) {
@@ -223,20 +207,16 @@ class ImageProcessing {
   }
 
   // Converts a single-channel grayscale image into a three-channel RGB image
-  static List<List<List<int>>> convertTo3Channels(
-      List<List<List<double>>> grayImage) {
+  static List<List<List<int>>> convertTo3Channels(List<List<List<double>>> grayImage) {
     int height = grayImage.length;
     int width = grayImage[0].length;
     List<List<List<int>>> threeChannelImage = List.generate(
-        height,
-        (_) => List.generate(
-            width, (_) => List.generate(3, (_) => 0))); // 3 -> RGB
+        height, (_) => List.generate(width, (_) => List.generate(3, (_) => 0))); // 3 -> RGB
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
         int pixelValue = grayImage[y][x][0].toInt(); // Pixel value in grayscale
         for (int c = 0; c < 3; c++) {
-          threeChannelImage[y][x][c] =
-              pixelValue; // Fill all three channels with the same value
+          threeChannelImage[y][x][c] = pixelValue; // Fill all three channels with the same value
         }
       }
     }
@@ -244,27 +224,21 @@ class ImageProcessing {
   }
 
   // Normalizes an image by scaling, subtracting mean, and dividing by standard deviation
-  static List<List<List<double>>> processImage(
-      List<List<List<double>>> img,
-      double scale,
-      List<List<List<double>>> mean,
-      List<List<List<double>>> std) {
+  static List<List<List<double>>> processImage(List<List<List<double>>> img, double scale,
+      List<List<List<double>>> mean, List<List<List<double>>> std) {
     int height = img.length;
     int width = img[0].length;
     int channels = img[0][0].length;
 
     // Initialize a 3D list to store the normalized data
     List<List<List<double>>> dataImage = List.generate(
-        height,
-        (_) =>
-            List.generate(width, (_) => List.generate(channels, (_) => 0.0)));
+        height, (_) => List.generate(width, (_) => List.generate(channels, (_) => 0.0)));
 
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
         for (int c = 0; c < channels; c++) {
           // Apply normalization: scale the value, subtract the mean, and divide by the standard deviation
-          dataImage[y][x][c] =
-              ((img[y][x][c] * scale) - mean[0][0][c]) / std[0][0][c];
+          dataImage[y][x][c] = ((img[y][x][c] * scale) - mean[0][0][c]) / std[0][0][c];
         }
       }
     }
@@ -306,14 +280,13 @@ class ImageProcessing {
   }
 
   // Rotates a 3D list representing an image by 90 degrees counter-clockwise
-  static List<List<List<double>>> rotate90DegreesLeft(
-      List<List<List<double>>> image) {
+  static List<List<List<double>>> rotate90DegreesLeft(List<List<List<double>>> image) {
     int height = image.length;
     int width = image[0].length;
 
     // Create a new image with swapped width and height dimensions
-    var rotatedImage = List.generate(width,
-        (_) => List.generate(height, (_) => List.generate(3, (_) => 0.0)));
+    var rotatedImage =
+        List.generate(width, (_) => List.generate(height, (_) => List.generate(3, (_) => 0.0)));
 
     // Perform the rotation
     for (int y = 0; y < height; y++) {

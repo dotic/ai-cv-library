@@ -1,0 +1,9 @@
+{
+  "name": "ai_cv_library",
+  "private": true,
+  "scripts": {
+    "format:fix": "dart format -l 100 .",
+    "lint:fix": "dart fix --apply && dart analyze",
+    "lint": "dart fix --dry-run && dart analyze"
+  }
+}

@@ -8,10 +8,8 @@ import 'package:image/image.dart' as img;
 class Utils {
   // yolo detection
   static const List<String> yoloModelList = ["v1_0", "v1_1"];
-  static const String modelYoloName =
-      'yolov7_model.tflite'; //'yolov7_model.tflite.enc';
-  static const String modelYoloOnnxPath =
-      'yolov7_model.onnx'; //'yolov7_model.onnx.enc';
+  static const String modelYoloName = 'yolov7_model.tflite'; //'yolov7_model.tflite.enc';
+  static const String modelYoloOnnxPath = 'yolov7_model.onnx'; //'yolov7_model.onnx.enc';
   static const String labelPath = 'assets/labels.txt';
   static const double scoreThreshold = 0.4;
 
@@ -72,30 +70,16 @@ class Utils {
 
   // Calculate the euclidean distance
   static double euclideanDistance(List<int> point1, List<int> point2) {
-    return math.sqrt(math.pow(point2[0] - point1[0], 2) +
-        math.pow(point2[1] - point1[1], 2));
+    return math.sqrt(math.pow(point2[0] - point1[0], 2) + math.pow(point2[1] - point1[1], 2));
   }
 
   // Expand a rectangle by a given distance in all directions
-  static List<List<int>> expandRectangle(
-      List<Tuple2<double, double>> box, double distance) {
+  static List<List<int>> expandRectangle(List<Tuple2<double, double>> box, double distance) {
     return [
-      [
-        (box[0].item1 - distance).toInt(),
-        (box[0].item2 - distance).toInt()
-      ], // top left corner
-      [
-        (box[1].item1 + distance).toInt(),
-        (box[1].item2 - distance).toInt()
-      ], // top right corner
-      [
-        (box[2].item1 + distance).toInt(),
-        (box[2].item2 + distance).toInt()
-      ], // bottom right corner
-      [
-        (box[3].item1 - distance).toInt(),
-        (box[3].item2 + distance).toInt()
-      ] // bottom left corner
+      [(box[0].item1 - distance).toInt(), (box[0].item2 - distance).toInt()], // top left corner
+      [(box[1].item1 + distance).toInt(), (box[1].item2 - distance).toInt()], // top right corner
+      [(box[2].item1 + distance).toInt(), (box[2].item2 + distance).toInt()], // bottom right corner
+      [(box[3].item1 - distance).toInt(), (box[3].item2 + distance).toInt()] // bottom left corner
     ];
   }
 
@@ -170,21 +154,8 @@ class Utils {
   }
 
   // Improve Ocr text prediction with custom rules
-  static List<dynamic> improveTextPrediction(
-      List<Tuple2<String, double>> filterRecRes) {
-    List<String> lNumbers = [
-      "0",
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      '-'
-    ];
+  static List<dynamic> improveTextPrediction(List<Tuple2<String, double>> filterRecRes) {
+    List<String> lNumbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", '-'];
     List<String> lFibre = ["F", "I", "B", "R", "E"];
     List<String> l31 = ["3", "1", "5", "T", "I", "S"];
     var dNToC = {
@@ -226,9 +197,7 @@ class Utils {
           List<String> lTxt = txt.split('');
 
           // Change "=", "*", "~" or ":" to "-"
-          lTxt = lTxt
-              .map((x) => ["=", "*", "~", ":"].contains(x) ? "-" : x)
-              .toList();
+          lTxt = lTxt.map((x) => ["=", "*", "~", ":"].contains(x) ? "-" : x).toList();
           lTxt = lTxt.map((x) => x != '.' ? x : '').toList();
 
           // If number between 2 str -> change to associated number (same vice versa) (for the first element check i+1 and i+2 and for the last do nothing (impossible to know))
@@ -276,8 +245,7 @@ class Utils {
             // If l is the first element of the list
             cAlone += (i - 1) == -1 ? 1 : 0;
             // If l is the last element of the list
-            cAlone +=
-                (i + 1) > (lTxt.length - 1) ? 1 : (lTxt[i + 1] == " " ? 1 : 0);
+            cAlone += (i + 1) > (lTxt.length - 1) ? 1 : (lTxt[i + 1] == " " ? 1 : 0);
             if (cAlone > 1) {
               lTxt[i] = "";
             }
@@ -287,8 +255,7 @@ class Utils {
           // If 3 similar elements with lFibre and 1 with l31 -> change to FIBRE31
           var lSameFibre = lTxt.toSet().intersection(lFibre.toSet()).toList();
           if (lSameFibre.length >= 3 && maxI + 1 <= 8) {
-            var lTxtUpdated =
-                lTxt.toSet().difference(lSameFibre.toSet()).toList();
+            var lTxtUpdated = lTxt.toSet().difference(lSameFibre.toSet()).toList();
             if (lTxtUpdated.toSet().intersection(l31.toSet()).isNotEmpty) {
               lTxt = "FIBRE31".split('');
             }
@@ -311,9 +278,7 @@ class Utils {
             iPbo += ["O", "0"].contains(lTxt[2]) ? 1 : 0;
             if (iPbo >= 2) {
               var firstThreeChars = lTxt.sublist(0, 3).toSet();
-              if (firstThreeChars
-                  .intersection({"P", "B", "O"}.toSet())
-                  .isNotEmpty) {
+              if (firstThreeChars.intersection({"P", "B", "O"}.toSet()).isNotEmpty) {
                 lTxt.replaceRange(0, 3, ["P", "B", "O"]);
               }
             }
@@ -322,14 +287,10 @@ class Utils {
             int iCdi = 0;
             iCdi += ["C"].contains(lTxt[0]) ? 1 : 0;
             iCdi += ["D"].contains(lTxt[1]) ? 1 : 0;
-            iCdi += ["I", "T", "1", "l", "E", "K", "L", "F"].contains(lTxt[2])
-                ? 1
-                : 0;
+            iCdi += ["I", "T", "1", "l", "E", "K", "L", "F"].contains(lTxt[2]) ? 1 : 0;
             if (iCdi >= 2) {
               var firstThreeChars = lTxt.sublist(0, 3).toSet();
-              if (firstThreeChars
-                  .intersection({"C", "D", "I"}.toSet())
-                  .isNotEmpty) {
+              if (firstThreeChars.intersection({"C", "D", "I"}.toSet()).isNotEmpty) {
                 if (!["E", "K", "L", "F"].contains(lTxt[2])) {
                   lTxt.replaceRange(0, 3, ["C", "D", "I"]);
                 } else {
@@ -348,10 +309,7 @@ class Utils {
             iOcto += ["Q", "0", "O"].contains(lTxt[3]) ? 1 : 0;
             if (iOcto >= 3) {
               var firstFourChars = lTxt.sublist(0, 4).toSet();
-              if (firstFourChars
-                      .intersection({"O", "C", "T", "O"}.toSet())
-                      .length >=
-                  2) {
+              if (firstFourChars.intersection({"O", "C", "T"}.toSet()).length >= 2) {
                 lTxt.replaceRange(0, 4, ["O", "C", "T", "O"]);
               }
             }

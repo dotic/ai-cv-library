@@ -27,11 +27,7 @@ class ModelLoader {
 
       String modelYoloName =
           "${(Utils.modelYoloName).replaceAll('.tflite', '')}_$yoloModelVersion.tflite";
-      List<String> modelList = [
-        Utils.ocrModelOnnxDet,
-        Utils.ocrModelOnnxRec,
-        modelYoloName
-      ];
+      List<String> modelList = [Utils.ocrModelOnnxDet, Utils.ocrModelOnnxRec, modelYoloName];
       for (String filePath in modelList) {
         //final directory = (await getExternalStorageDirectory())!;
         final directory = await getApplicationDocumentsDirectory();
@@ -41,13 +37,11 @@ class ModelLoader {
         String updatedFilePath = filePath.replaceAll(regExp, 'model.tflite');
         final file = File('${directory.path}/$updatedFilePath');
 
-        final response =
-            await s3.headObject(bucket: config['bucketName'], key: filePath);
+        final response = await s3.headObject(bucket: config['bucketName'], key: filePath);
         final s3LastModified = response.lastModified;
 
         if (s3LastModified == null) {
-          throw Exception(
-              "Unable to retrieve last modification date of S3 file");
+          throw Exception("Unable to retrieve last modification date of S3 file");
         }
 
         // Check if the local file exists and compare modification dates
@@ -63,8 +57,7 @@ class ModelLoader {
 
         // Download file if local file does not exist or is obsolete
         log("Downloading $filePath ...");
-        final getObjectResponse =
-            await s3.getObject(bucket: config['bucketName'], key: filePath);
+        final getObjectResponse = await s3.getObject(bucket: config['bucketName'], key: filePath);
         if (getObjectResponse.body == null) {
           throw Exception("No content found in answer S3");
         }
@@ -95,8 +88,7 @@ class ModelLoader {
   }
 
   // Perform predictions using an ONNX model
-  static dynamic onnxPred(
-      List data, List<int> shape, String modelPath, String inputDictKey) async {
+  static dynamic onnxPred(List data, List<int> shape, String modelPath, String inputDictKey) async {
     OrtEnv.instance.init();
     final sessionOptions = OrtSessionOptions();
     final modelFile = File(modelPath);
@@ -140,11 +132,8 @@ class ModelLoader {
     return results;
   }
 
-  Future<List<dynamic>?> processPredict(
-      img.Image imageInput,
-      String modelOnnxDetPath,
-      String modelOnnxRecPath,
-      String contentsDict) async {
+  Future<List<dynamic>?> processPredict(img.Image imageInput, String modelOnnxDetPath,
+      String modelOnnxRecPath, String contentsDict) async {
     //init prediction
     _predictions = [];
 
@@ -154,8 +143,7 @@ class ModelLoader {
 
     // Convert image from channel last format to channel first format
     final List<List<List<num>>> input =
-        ImageProcessing.convertChannelsLastToChannelsFirst(
-            convertedImageToMatrix);
+        ImageProcessing.convertChannelsLastToChannelsFirst(convertedImageToMatrix);
 
     //Yolo prediction
     //tflite prediction
@@ -182,8 +170,8 @@ class ModelLoader {
       }
       // if tag "etiquette" is detected
       if (r['cls'].toString().contains('etiquette')) {
-        await _processTagLabel(r, imageInput, input, modelOnnxDetPath,
-            modelOnnxRecPath, contentsDict);
+        await _processTagLabel(
+            r, imageInput, input, modelOnnxDetPath, modelOnnxRecPath, contentsDict);
       }
 
       // Draw results bboxes
@@ -196,17 +184,14 @@ class ModelLoader {
     return _predictions;
   }
 
-  Future<void> _processPboTag(
-      Map<String, dynamic> r, img.Image imageInput, var results) async {
-    bool containsRef = results.any(
-        (r) => ['facade', 'poteau', 'tuyau'].contains(r['cls'].toString()));
+  Future<void> _processPboTag(Map<String, dynamic> r, img.Image imageInput, var results) async {
+    bool containsRef =
+        results.any((r) => ['facade', 'poteau', 'tuyau'].contains(r['cls'].toString()));
     if (containsRef) {
       var dfRef = results
-          .where((r) =>
-              ['facade', 'poteau', 'tuyau'].contains(r['cls'].toString()))
+          .where((r) => ['facade', 'poteau', 'tuyau'].contains(r['cls'].toString()))
           .toList();
-      String idPbo =
-          "pbo_x1:${r['x1']}_y1:${r['y1']}_x2:${r['x2']}_y2:${r['y2']}";
+      String idPbo = "pbo_x1:${r['x1']}_y1:${r['y1']}_x2:${r['x2']}_y2:${r['y2']}";
       double minDistance = double.maxFinite;
       Map<String, dynamic>? refToCheck;
 
@@ -229,10 +214,7 @@ class ModelLoader {
         log("Height pbo : $cmDistancePbo cm (id pbo = $idPbo)");
 
         // Add to global prediction list
-        var dicResPbo = {
-          "idPbo": idPbo,
-          "approximateDistanceFromGroundCm": cmDistancePbo
-        };
+        var dicResPbo = {"idPbo": idPbo, "approximateDistanceFromGroundCm": cmDistancePbo};
         _predictions!.add(dicResPbo);
 
         // Prediction height drawing
@@ -259,8 +241,7 @@ class ModelLoader {
     int cropHeight = math.min(y2 - y1, imageInput.height - y1);
 
     // Crop the area of the image that needs blurring
-    final toBlur = img.copyCrop(imageInput,
-        x: x1, y: y1, width: cropWidth, height: cropHeight);
+    final toBlur = img.copyCrop(imageInput, x: x1, y: y1, width: cropWidth, height: cropHeight);
 
     // Calculate the blur radius, ensuring it's at least 1
     int radius = (math.min(toBlur.width, toBlur.height) * 0.6).toInt();
@@ -288,8 +269,7 @@ class ModelLoader {
     log("Reading text ...");
 
     // Crop and preprocessing for ocr
-    Tuple3<List<List<List<int>>>, List<List<List<double>>>, List<double>>
-        imagePreprocessed =
+    Tuple3<List<List<List<int>>>, List<List<List<double>>>, List<double>> imagePreprocessed =
         ImageProcessing.preprocessImageForOcr(imageInput, r);
 
     // KeepKeys
@@ -302,9 +282,8 @@ class ModelLoader {
         await _performOcrDetection(dataImageNorm, shapeList, modelOnnxDetPath);
 
     // OCR recognition
-    List<Tuple2<String, double>> recognitionResult =
-        await _performOcrRecognition(input, imageInputList, detectionResult,
-            modelOnnxRecPath, contentsDict);
+    List<Tuple2<String, double>> recognitionResult = await _performOcrRecognition(
+        input, imageInputList, detectionResult, modelOnnxRecPath, contentsDict);
 
     // Improve OCR prediction
     List<dynamic> improvedText = Utils.improveTextPrediction(recognitionResult);
@@ -315,25 +294,20 @@ class ModelLoader {
       var etiRes = {
         "textEtiquette": improvedText[0],
         "confidenceList": improvedText[1],
-        "idEtiquette":
-            "eti_x1:${r['x1']}_y1:${r['y1']}_x2:${r['x2']}_y2:${r['y2']}"
+        "idEtiquette": "eti_x1:${r['x1']}_y1:${r['y1']}_x2:${r['x2']}_y2:${r['y2']}"
       };
       _predictions!.add(etiRes);
     }
   }
 
-  Future<List<dynamic>> _performOcrDetection(
-      List<List<List<List<double>>>> dataImageNorm,
-      List<List<double>> shapeList,
-      String modelOnnxDetPath) async {
-    var outputDet =
-        await _predictWithOnnxDetection(dataImageNorm, modelOnnxDetPath);
+  Future<List<dynamic>> _performOcrDetection(List<List<List<List<double>>>> dataImageNorm,
+      List<List<double>> shapeList, String modelOnnxDetPath) async {
+    var outputDet = await _predictWithOnnxDetection(dataImageNorm, modelOnnxDetPath);
     return _processDetectionResults(outputDet, shapeList);
   }
 
   Future<dynamic> _predictWithOnnxDetection(
-      List<List<List<List<double>>>> dataImageNorm,
-      String modelOnnxDetPath) async {
+      List<List<List<List<double>>>> dataImageNorm, String modelOnnxDetPath) async {
     // onnx detection prediction
     List<int> onnxDetShape = [
       dataImageNorm.shape[0],
@@ -343,22 +317,18 @@ class ModelLoader {
     ];
     List<List<List<Float32List>>> inputToFloat = dataImageNorm
         .map((list3D) => list3D
-            .map((list2D) => list2D
-                .map((innerList) => Float32List.fromList(innerList))
-                .toList())
+            .map((list2D) => list2D.map((innerList) => Float32List.fromList(innerList)).toList())
             .toList())
         .toList();
 
     String inputDictKey = 'x';
-    var outputDet = (await onnxPred(
-            inputToFloat, onnxDetShape, modelOnnxDetPath, inputDictKey))[0]
-        .value;
+    var outputDet =
+        (await onnxPred(inputToFloat, onnxDetShape, modelOnnxDetPath, inputDictKey))[0].value;
 
     return outputDet;
   }
 
-  List<dynamic> _processDetectionResults(
-      dynamic outputDet, List<List<double>> shapeList) {
+  List<dynamic> _processDetectionResults(dynamic outputDet, List<List<double>> shapeList) {
     // Results post process
     List<List<List<double>>> pred = List<List<List<double>>>.from(
       outputDet[0].map(
@@ -385,8 +355,7 @@ class ModelLoader {
 
       // Find contours in the mask
       Uint8List maskData = ImageProcessing.convertBoolMaskToUint8List(mask);
-      List<List<List<int>>> contours =
-          cv2.findContoursInMask(maskData, width, height);
+      List<List<List<int>>> contours = cv2.findContoursInMask(maskData, width, height);
       int numContours = math.min(contours.length, Utils.maxCandidates);
 
       // Process each contour to create boxes
@@ -401,8 +370,7 @@ class ModelLoader {
         // Skip small contours
         if (sside < Utils.minSize) continue;
 
-        List<List<double>> pointsArray =
-            box.map<List<double>>((Tuple2<double, double> tuple) {
+        List<List<double>> pointsArray = box.map<List<double>>((Tuple2<double, double> tuple) {
           return [tuple.item1, tuple.item2];
         }).toList();
         List<List<double>> box0 = List.from(pointsArray);
@@ -410,36 +378,15 @@ class ModelLoader {
         int h = predBatchIndex.length;
         int w = predBatchIndex[0].length;
         // Calculation of xmin, xmax, ymin, ymax (bounding box dimensions)
-        double xmin = box0
-            .map((e) => e[0])
-            .reduce(math.min)
-            .floor()
-            .clamp(0, w - 1)
-            .toDouble();
-        double xmax = box0
-            .map((e) => e[0])
-            .reduce(math.max)
-            .ceil()
-            .clamp(0, w - 1)
-            .toDouble();
-        double ymin = box0
-            .map((e) => e[1])
-            .reduce(math.min)
-            .floor()
-            .clamp(0, h - 1)
-            .toDouble();
-        double ymax = box0
-            .map((e) => e[1])
-            .reduce(math.max)
-            .ceil()
-            .clamp(0, h - 1)
-            .toDouble();
+        double xmin = box0.map((e) => e[0]).reduce(math.min).floor().clamp(0, w - 1).toDouble();
+        double xmax = box0.map((e) => e[0]).reduce(math.max).ceil().clamp(0, w - 1).toDouble();
+        double ymin = box0.map((e) => e[1]).reduce(math.min).floor().clamp(0, h - 1).toDouble();
+        double ymax = box0.map((e) => e[1]).reduce(math.max).ceil().clamp(0, h - 1).toDouble();
 
         // Create and fill a mask for the box
         int maskHeight = (ymax - ymin + 1).toInt();
         int maskWidth = (xmax - xmin + 1).toInt();
-        List<List<int>> mask =
-            List.generate(maskHeight, (_) => List.filled(maskWidth, 0));
+        List<List<int>> mask = List.generate(maskHeight, (_) => List.filled(maskWidth, 0));
         // Adjust box coordinates
         for (var point in box0) {
           point[0] -= xmin;
@@ -479,8 +426,7 @@ class ModelLoader {
           return [tuple.item1, tuple.item2];
         }).toList();
 
-        boxes
-            .add(Utils.scaleAndClipBox(pointsArray, width, srcH, srcW, height));
+        boxes.add(Utils.scaleAndClipBox(pointsArray, width, srcH, srcW, height));
         scores.add(score);
       }
       boxesBatch.add({'points': boxes});
@@ -518,13 +464,11 @@ class ModelLoader {
 
     // Prepare Images For Recognition
     List<List<List<int>>> dtBoxes = _calculateDtBoxes(boxesBatch, imgH, imgW);
-    List<List<List<List<double>>>> imgCropList =
-        _createImgCropList(dtBoxes, imageInputList);
+    List<List<List<List<double>>>> imgCropList = _createImgCropList(dtBoxes, imageInputList);
 
     // Text recognize
     var imgNum = imgCropList.length;
-    List<Tuple2<String, double>> recRes =
-        List.generate(imgNum, (_) => const Tuple2('', 0.0));
+    List<Tuple2<String, double>> recRes = List.generate(imgNum, (_) => const Tuple2('', 0.0));
 
     //Calculate the aspect ratio of all text bars
     List<double> widthList = [];
@@ -548,22 +492,19 @@ class ModelLoader {
           await _predictWithOnnxRecognition(normImgBatch, modelOnnxRecPath);
 
       // Process and decode Ocr results
-      List<Tuple2<String, double>> recResult =
-          await _decodeOcrResults(preds, contentsDict);
+      List<Tuple2<String, double>> recResult = await _decodeOcrResults(preds, contentsDict);
       for (int rno = 0; rno < recResult.length; rno++) {
         recRes[indices[begImgNo + rno]] = recResult[rno];
       }
     }
 
-    List<Tuple2<String, double>> filterRecRes =
-        _processFilterRecognitionResults(recRes, dtBoxes);
+    List<Tuple2<String, double>> filterRecRes = _processFilterRecognitionResults(recRes, dtBoxes);
     print(filterRecRes);
 
     return filterRecRes;
   }
 
-  List<List<List<int>>> _calculateDtBoxes(
-      List<dynamic> boxesBatch, int imgH, int imgW) {
+  List<List<List<int>>> _calculateDtBoxes(List<dynamic> boxesBatch, int imgH, int imgW) {
     List<List<List<int>>> dtBoxesNew = [];
     var dtBoxes = boxesBatch[0]['points'];
     for (var pts in dtBoxes) {
@@ -632,12 +573,10 @@ class ModelLoader {
       // Calculate distances to determine the width and height of the crop
       double distance01 = Utils.euclideanDistance(tmpBox[0], tmpBox[1]);
       double distance23 = Utils.euclideanDistance(tmpBox[2], tmpBox[3]);
-      int imgCropWidth =
-          distance01 > distance23 ? distance01.toInt() : distance23.toInt();
+      int imgCropWidth = distance01 > distance23 ? distance01.toInt() : distance23.toInt();
       double distance03 = Utils.euclideanDistance(tmpBox[0], tmpBox[3]);
       double distance12 = Utils.euclideanDistance(tmpBox[1], tmpBox[2]);
-      int imgCropHeight =
-          distance03 > distance12 ? distance03.toInt() : distance12.toInt();
+      int imgCropHeight = distance03 > distance12 ? distance03.toInt() : distance12.toInt();
 
       // Standard points for the perspective transformation
       List<List<int>> ptsStd = [
@@ -652,17 +591,15 @@ class ModelLoader {
 
       // Apply warp perspective
       List<List<List<int>>> srcImageDataTemp = imageInputList
-          .map((list2D) => list2D
-              .map((list1D) => list1D.map((value) => (value).toInt()).toList())
-              .toList())
+          .map((list2D) =>
+              list2D.map((list1D) => list1D.map((value) => (value).toInt()).toList()).toList())
           .toList();
 
-      Uint8List srcImageData =
-          ImageProcessing.convertNestedListToUint8List(srcImageDataTemp);
+      Uint8List srcImageData = ImageProcessing.convertNestedListToUint8List(srcImageDataTemp);
       int srcWidth = srcImageDataTemp[0].length;
       int srcHeight = srcImageDataTemp.length;
-      List<List<List<double>>> dstImg = cv2.warpPerspective(
-          srcImageData, srcWidth, srcHeight, M, imgCropWidth, imgCropHeight);
+      List<List<List<double>>> dstImg =
+          cv2.warpPerspective(srcImageData, srcWidth, srcHeight, M, imgCropWidth, imgCropHeight);
 
       // Rotate image if the height/width ratio is greater than 1.5
       int dstImgHeight = dstImg.length;
@@ -677,10 +614,7 @@ class ModelLoader {
   }
 
   List<List<List<List<double>>>> _normalizeForOcr(
-      List<List<List<List<double>>>> imgCropList,
-      List<int> indices,
-      int begImgNo,
-      int endImgNo) {
+      List<List<List<List<double>>>> imgCropList, List<int> indices, int begImgNo, int endImgNo) {
     List<List<List<List<double>>>> normImgBatch = [];
     double maxWhRatio = 0;
 
@@ -712,10 +646,8 @@ class ModelLoader {
       }
 
       // Resize image for OCR input
-      img.Image originalImage =
-          ImageProcessing.imgCropListToImageObject(imgCropList[indices[ino]]);
-      img.Image resizedImageObj =
-          img.copyResize(originalImage, width: resizedW, height: imgH);
+      img.Image originalImage = ImageProcessing.imgCropListToImageObject(imgCropList[indices[ino]]);
+      img.Image resizedImageObj = img.copyResize(originalImage, width: resizedW, height: imgH);
       List<List<List<double>>> resizedImage =
           ImageProcessing.imageObjectToImgCropList(resizedImageObj);
 
@@ -727,18 +659,15 @@ class ModelLoader {
           }
         }
       }
-      resizedImage =
-          ImageProcessing.convertChannelsLastToChannelsFirst(resizedImage)
-              .map((list2D) => list2D
-                  .map((list) => list.map((item) => item.toDouble()).toList())
-                  .toList())
-              .toList();
+      resizedImage = ImageProcessing.convertChannelsLastToChannelsFirst(resizedImage)
+          .map((list2D) =>
+              list2D.map((list) => list.map((item) => item.toDouble()).toList()).toList())
+          .toList();
 
       // Create a normalized image batch for OCR
       List<List<List<double>>> normImg = List.generate(
           imgC,
-          (c) => List.generate(
-              imgH, (h) => List.generate(imgW, (w) => 0.0, growable: false),
+          (c) => List.generate(imgH, (h) => List.generate(imgW, (w) => 0.0, growable: false),
               growable: false),
           growable: false);
       for (int c = 0; c < imgC; c++) {
@@ -756,8 +685,7 @@ class ModelLoader {
 
   // Onnx recognition prediction
   Future<List<List<List<double>>>> _predictWithOnnxRecognition(
-      List<List<List<List<double>>>> normImgBatch,
-      String modelOnnxRecPath) async {
+      List<List<List<List<double>>>> normImgBatch, String modelOnnxRecPath) async {
     List<int> onnxRecShape = [
       normImgBatch.shape[0],
       normImgBatch.shape[1],
@@ -766,16 +694,13 @@ class ModelLoader {
     ];
     List<List<List<Float32List>>> inputToFloat = normImgBatch
         .map((list3D) => list3D
-            .map((list2D) => list2D
-                .map((innerList) => Float32List.fromList(innerList))
-                .toList())
+            .map((list2D) => list2D.map((innerList) => Float32List.fromList(innerList)).toList())
             .toList())
         .toList();
 
     String inputDictKey = 'x';
-    List<List<List<double>>> outputRec = (await onnxPred(
-            inputToFloat, onnxRecShape, modelOnnxRecPath, inputDictKey))[0]
-        .value;
+    List<List<List<double>>> outputRec =
+        (await onnxPred(inputToFloat, onnxRecShape, modelOnnxRecPath, inputDictKey))[0].value;
     return outputRec;
   }
 
@@ -800,8 +725,8 @@ class ModelLoader {
       List<int> matrixIdx = [];
       List<double> matrixProb = [];
       for (var sublist in matrix) {
-        int maxIdx = sublist.indexWhere(
-            (x) => x == sublist.map((e) => e.toDouble()).reduce(math.max));
+        int maxIdx =
+            sublist.indexWhere((x) => x == sublist.map((e) => e.toDouble()).reduce(math.max));
         matrixIdx.add(maxIdx);
         matrixProb.add(sublist[maxIdx]);
       }
@@ -818,8 +743,7 @@ class ModelLoader {
       var confList = <double>[];
       for (var idx = 0; idx < textIndex[batchIdx].length; idx++) {
         if (ignoredTokens.contains(textIndex[batchIdx][idx])) continue;
-        if (idx > 0 &&
-            textIndex[batchIdx][idx - 1] == textIndex[batchIdx][idx]) {
+        if (idx > 0 && textIndex[batchIdx][idx - 1] == textIndex[batchIdx][idx]) {
           continue;
         }
 

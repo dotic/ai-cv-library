@@ -32,8 +32,7 @@ class AIComputerVision {
       // Add a line break before displaying an unrecognized class or element, except for the first element
       if (i > 0 &&
           (prediction.containsKey('cls') ||
-              !prediction.containsKey('textEtiquette') &&
-                  !prediction.containsKey('idPbo'))) {
+              !prediction.containsKey('textEtiquette') && !prediction.containsKey('idPbo'))) {
         formattedPredictions += "\n\n";
       }
       if (prediction.containsKey('textEtiquette')) {
@@ -69,16 +68,15 @@ class AIComputerVision {
     final receivePort = ReceivePort();
 
     // Preload paths and data for image analysis
-    final yoloPath = await Utils.getModelPath(
-        Utils.modelYoloName); // Preloading the yolo model path
-    final labelsRaw =
-        await rootBundle.loadString(Utils.labelPath); // Preload labels
-    final String modelOnnxDetPath = await Utils.getModelPath(
-        Utils.ocrModelOnnxDet); // Preload OCR detection model path
-    final String modelOnnxRecPath = await Utils.getModelPath(
-        Utils.ocrModelOnnxRec); // Preload OCR recognition model path
-    final String contentsDict = await rootBundle
-        .loadString(Utils.characterDictPath); // Preload OCR dictionary
+    final yoloPath =
+        await Utils.getModelPath(Utils.modelYoloName); // Preloading the yolo model path
+    final labelsRaw = await rootBundle.loadString(Utils.labelPath); // Preload labels
+    final String modelOnnxDetPath =
+        await Utils.getModelPath(Utils.ocrModelOnnxDet); // Preload OCR detection model path
+    final String modelOnnxRecPath =
+        await Utils.getModelPath(Utils.ocrModelOnnxRec); // Preload OCR recognition model path
+    final String contentsDict =
+        await rootBundle.loadString(Utils.characterDictPath); // Preload OCR dictionary
 
     // Launch isolate for image processing
     await Isolate.spawn(_processImageInBackground, [
@@ -112,8 +110,8 @@ class AIComputerVision {
     String contentsDict = args[6];
     // Init ObjectDetection in isolate and process image
     ObjectDetection detection = ObjectDetection();
-    _asyncImageProcessing(path, sendPort, detection, yoloPath, labelsRaw,
-        modelOnnxDetPath, modelOnnxRecPath, contentsDict);
+    _asyncImageProcessing(path, sendPort, detection, yoloPath, labelsRaw, modelOnnxDetPath,
+        modelOnnxRecPath, contentsDict);
   }
 
   static void _asyncImageProcessing(
@@ -125,8 +123,8 @@ class AIComputerVision {
       String modelOnnxDetPath,
       String modelOnnxRecPath,
       String contentsDict) async {
-    final results = await detection.analyseImage(path, yoloPath, labelsRaw,
-        modelOnnxDetPath, modelOnnxRecPath, contentsDict);
+    final results = await detection.analyseImage(
+        path, yoloPath, labelsRaw, modelOnnxDetPath, modelOnnxRecPath, contentsDict);
     // Send image analysis results to main port
     sendPort.send({
       'image': results.image,

@@ -10,13 +10,8 @@ class ObjectDetection {
   final ModelLoader _modelLoader = ModelLoader();
 
   // Analyzes an image to detect objects and returns the results
-  Future<ImageAnalysisResult> analyseImage(
-      String imagePath,
-      String yoloPath,
-      String labelsRaw,
-      String modelOnnxDetPath,
-      String modelOnnxRecPath,
-      String contentsDict) async {
+  Future<ImageAnalysisResult> analyseImage(String imagePath, String yoloPath, String labelsRaw,
+      String modelOnnxDetPath, String modelOnnxRecPath, String contentsDict) async {
     int totalPredictionTimeStart = DateTime.now().millisecondsSinceEpoch;
 
     // Init Yolo model
@@ -31,8 +26,7 @@ class ObjectDetection {
 
     // Calculate the total prediction time
     int totalPredictionTimeMs =
-        (DateTime.now().millisecondsSinceEpoch - totalPredictionTimeStart)
-            .toInt();
+        (DateTime.now().millisecondsSinceEpoch - totalPredictionTimeStart).toInt();
     log('Total prediction time: $totalPredictionTimeMs ms');
 
     // Return results
