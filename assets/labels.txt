@@ -1,0 +1,14 @@
+pbo
+poteau
+tuyau
+facade
+continuite_optique
+lovage_correct
+lovage_incorrect
+etiquette_finale
+etiquette_provisoire
+tampon_ouvert
+tampon_ferme
+visage
+plaque_immatriculation
+pbo_souterrain
