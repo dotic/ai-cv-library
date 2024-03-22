@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# details of the available types can be found in the .commitlintrc.cts file
+yarn commitlint --edit "${1}"

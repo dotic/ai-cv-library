@@ -4,6 +4,13 @@
   "scripts": {
     "format:fix": "dart format -l 100 .",
     "lint:fix": "dart fix --apply && dart analyze",
-    "lint": "dart fix --dry-run && dart analyze"
+    "lint": "dart fix --dry-run && dart analyze",
+    "prepare": "husky install 2>/dev/null"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.2.1",
+    "@commitlint/config-conventional": "^19.1.0",
+    "commitlint": "^19.2.1",
+    "husky": "^9.0.11"
   }
 }
