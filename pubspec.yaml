@@ -20,7 +20,10 @@ dependencies:
   image_gallery_saver: ^2.0.3
   image_picker: ^1.0.4
   intl: ^0.18.1
-  native_opencv: 4.9.0
+  native_opencv:
+    git:
+      url: git@github.com:MaximeWrlz/native_opencv.git
+      ref: master
   onnxruntime: ^1.1.0
   open_file_plus: ^3.4.1
   path_provider: ^2.1.1
