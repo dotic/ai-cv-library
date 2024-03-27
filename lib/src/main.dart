@@ -12,7 +12,7 @@ import 'image_analysis_result.dart';
 class AIComputerVision {
   bool get isAwesome => true;
 
-  Uint8List? image;
+  late Uint8List image;
   final imagePicker = ImagePicker();
   ObjectDetection? objectDetection;
   List<dynamic>? predictionResults;
@@ -101,8 +101,12 @@ class AIComputerVision {
       receivePort.close();
     });
 
+    if (predictionResults == null || totalPredictionTimeMs == null) {
+      throw Exception('Error processing image');
+    }
+
     return ImageAnalysisResult(
-      image: image!,
+      image: image,
       predictions: predictionResults,
       totalPredictionTimeMs: totalPredictionTimeMs!,
     );
