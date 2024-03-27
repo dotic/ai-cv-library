@@ -7,6 +7,8 @@ import 'package:ai_cv_library/src/model_loader.dart';
 import 'package:ai_cv_library/src/object_detection.dart';
 import 'package:ai_cv_library/src/utils.dart';
 
+import 'image_analysis_result.dart';
+
 class AIComputerVision {
   bool get isAwesome => true;
 
@@ -57,11 +59,11 @@ class AIComputerVision {
     return Utils.yoloModelList;
   }
 
-  void pickAndProcessImage(ImageSource source) async {
+  Future<ImageAnalysisResult> pickAndProcessImage(ImageSource source) async {
     final result = await imagePicker.pickImage(source: source);
 
     if (result == null) {
-      return;
+      throw Exception('No image selected');
     }
 
     // Create a port to receive data from the isolate
@@ -98,6 +100,12 @@ class AIComputerVision {
       // Close the ReceivePort once the data has been received
       receivePort.close();
     });
+
+    return ImageAnalysisResult(
+      image: image!,
+      predictions: predictionResults,
+      totalPredictionTimeMs: totalPredictionTimeMs!,
+    );
   }
 
   static void _processImageInBackground(List<dynamic> args) {
