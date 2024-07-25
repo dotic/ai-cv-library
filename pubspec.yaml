@@ -21,9 +21,7 @@ dependencies:
   image_picker: ^1.0.4
   intl: ^0.18.1
   native_opencv:
-    git:
-      url: git@github.com:MaximeWrlz/native_opencv.git
-      ref: master
+    path: native_opencv
   onnxruntime: ^1.1.0
   open_file_plus: ^3.4.1
   path_provider: ^2.1.1
