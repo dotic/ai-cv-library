@@ -10,7 +10,7 @@ class Utils {
   static const List<String> yoloModelList = ["v1_0", "v1_1"];
   static const String modelYoloName = 'yolov7_model.tflite'; //'yolov7_model.tflite.enc';
   static const String modelYoloOnnxPath = 'yolov7_model.onnx'; //'yolov7_model.onnx.enc';
-  static const String labelPath = 'assets/labels.txt';
+  static const String labelPath = 'packages/ai_cv_library/assets/labels.txt';
   static const double scoreThreshold = 0.4;
 
   //ocr detection
@@ -25,7 +25,7 @@ class Utils {
   static const double unclipRatio = 1.6;
   static const int recBatchNum = 6;
   static const List<int> recImageShape = [3, 48, 320];
-  static const String characterDictPath = "assets/latin_dict.txt";
+  static const String characterDictPath = "packages/ai_cv_library/assets/latin_dict.txt";
   static const bool useSpaceChar = true;
   static const double dropScore = 0.4;
 
