@@ -59,6 +59,7 @@ class AIComputerVision {
     return Utils.yoloModelList;
   }
 
+
   Future<ImageAnalysisResult> pickAndProcessImage(ImageSource source) async {
     final result = await imagePicker.pickImage(source: source);
 
@@ -70,15 +71,11 @@ class AIComputerVision {
     final receivePort = ReceivePort();
 
     // Preload paths and data for image analysis
-    final yoloPath =
-        await Utils.getModelPath(Utils.modelYoloName); // Preloading the yolo model path
+    final yoloPath = await Utils.getModelPath(Utils.modelYoloName); // Preloading the yolo model path
     final labelsRaw = await rootBundle.loadString(Utils.labelPath); // Preload labels
-    final String modelOnnxDetPath =
-        await Utils.getModelPath(Utils.ocrModelOnnxDet); // Preload OCR detection model path
-    final String modelOnnxRecPath =
-        await Utils.getModelPath(Utils.ocrModelOnnxRec); // Preload OCR recognition model path
-    final String contentsDict =
-        await rootBundle.loadString(Utils.characterDictPath); // Preload OCR dictionary
+    final String modelOnnxDetPath = await Utils.getModelPath(Utils.ocrModelOnnxDet); // Preload OCR detection model path
+    final String modelOnnxRecPath = await Utils.getModelPath(Utils.ocrModelOnnxRec); // Preload OCR recognition model path
+    final String contentsDict = await rootBundle.loadString(Utils.characterDictPath); // Preload OCR dictionary
 
     // Launch isolate for image processing
     await Isolate.spawn(_processImageInBackground, [
@@ -91,15 +88,16 @@ class AIComputerVision {
       contentsDict
     ]);
 
-    // Listen to the isolate results
-    receivePort.listen((data) {
-      image = data['image'];
-      predictionResults = data['predictions'];
-      totalPredictionTimeMs = data['totalTime'];
+    // Listen and await results from the isolate
+    final data = await receivePort.first;
 
-      // Close the ReceivePort once the data has been received
-      receivePort.close();
-    });
+    if (data['error'] != null) {
+      throw Exception(data['error']);
+    }
+
+    image = data['image'];
+    predictionResults = data['predictions'];
+    totalPredictionTimeMs = data['totalTime'];
 
     if (predictionResults == null || totalPredictionTimeMs == null) {
       throw Exception('Error processing image');
@@ -135,13 +133,21 @@ class AIComputerVision {
       String modelOnnxDetPath,
       String modelOnnxRecPath,
       String contentsDict) async {
-    final results = await detection.analyseImage(
-        path, yoloPath, labelsRaw, modelOnnxDetPath, modelOnnxRecPath, contentsDict);
-    // Send image analysis results to main port
-    sendPort.send({
-      'image': results.image,
-      'predictions': results.predictions,
-      'totalTime': results.totalPredictionTimeMs,
-    });
+    try {
+      final results = await detection.analyseImage(
+          path, yoloPath, labelsRaw, modelOnnxDetPath, modelOnnxRecPath, contentsDict);
+      // Send image analysis results to main port
+      sendPort.send({
+        'image': results.image,
+        'predictions': results.predictions,
+        'totalTime': results.totalPredictionTimeMs,
+      });
+      print("Results sent from isolate"); // Debug print
+    } catch (e) {
+      print("Error in isolate: $e");
+      sendPort.send({
+        'error': e.toString(),
+      });
+    }
   }
 }
