@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:isolate';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -13,41 +14,39 @@ class AIComputerVision {
   bool get isAwesome => true;
 
   late Uint8List image;
-  final imagePicker = ImagePicker();
+  final ImagePicker imagePicker = ImagePicker();
   ObjectDetection? objectDetection;
   List<dynamic>? predictionResults;
   int? totalPredictionTimeMs;
 
   Future<void> downloadModels(String yoloModelVersion) async {
     // Load s3 credentials
-    String s3Cred = await rootBundle.loadString('packages/ai_cv_library/assets/credentials.json');
-    Map<String, dynamic> jsonS3Cred = json.decode(s3Cred);
+    final String s3Cred = await rootBundle.loadString('packages/ai_cv_library/assets/credentials.json');
+    final Map<String, dynamic> jsonS3Cred = json.decode(s3Cred) as Map<String, dynamic>;
     // Download models
-    return await ModelLoader.downloadFileFromS3(jsonS3Cred, yoloModelVersion);
+    return ModelLoader.downloadFileFromS3(jsonS3Cred, yoloModelVersion);
   }
 
   String formatPredictions(List<dynamic> predictions) {
     // Initialize an empty string to build the final result
-    String formattedPredictions = "";
+    String formattedPredictions = '';
     for (int i = 0; i < predictions.length; i++) {
-      var prediction = predictions[i];
+      final dynamic prediction = predictions[i];
       // Add a line break before displaying an unrecognized class or element, except for the first element
       if (i > 0 &&
-          (prediction.containsKey('cls') ||
-              !prediction.containsKey('textEtiquette') && !prediction.containsKey('idPbo'))) {
+          (prediction.containsKey('cls') != null ||
+              prediction.containsKey('textEtiquette') == null && prediction.containsKey('idPbo') == null)) {
         formattedPredictions += "\n\n";
       }
-      if (prediction.containsKey('textEtiquette')) {
+      if (prediction.containsKey('textEtiquette') != null) {
         // Add ocr results
         formattedPredictions +=
             "\nTexte: ${prediction['textEtiquette'].join(", ")}\nConfiance (ocr): ${prediction['confidenceList'].join(", ")}";
-      } else if (prediction.containsKey('idPbo')) {
+      } else if (prediction.containsKey('idPbo') != null) {
         // Add pbo height
-        formattedPredictions +=
-            "\nHauteur (Approximative): ${prediction['approximateDistanceFromGroundCm']} cm";
-      } else if (prediction.containsKey('cls')) {
-        formattedPredictions +=
-            "Catégorie : ${prediction['cls']}\nConfiance : ${prediction['score']}";
+        formattedPredictions += "\nHauteur (Approximative): ${prediction['approximateDistanceFromGroundCm']} cm";
+      } else if (prediction.containsKey('cls') != null) {
+        formattedPredictions += "Catégorie : ${prediction['cls']}\nConfiance : ${prediction['score']}";
       } else {
         formattedPredictions += "Non reconnu";
       }
@@ -59,45 +58,51 @@ class AIComputerVision {
     return Utils.yoloModelList;
   }
 
-
-  Future<ImageAnalysisResult> pickAndProcessImage(ImageSource source, String? imagePath) async {
-    final String path = imagePath ?? await imagePicker.pickImage(source: source)?.path;
+  Future<ImageAnalysisResult> pickAndProcessImage(
+    ImageSource source, {
+    String? imagePath,
+  }) async {
+    final String? path = imagePath ?? (await imagePicker.pickImage(source: source))?.path;
 
     if (path == null || path.isEmpty) {
       throw Exception('No image selected');
     }
 
     // Create a port to receive data from the isolate
-    final receivePort = ReceivePort();
+    final ReceivePort receivePort = ReceivePort();
 
     // Preload paths and data for image analysis
-    final yoloPath = await Utils.getModelPath(Utils.modelYoloName); // Preloading the yolo model path
-    final labelsRaw = await rootBundle.loadString(Utils.labelPath); // Preload labels
+    final String yoloPath = await Utils.getModelPath(Utils.modelYoloName); // Preloading the yolo model path
+    final String labelsRaw = await rootBundle.loadString(Utils.labelPath); // Preload labels
     final String modelOnnxDetPath = await Utils.getModelPath(Utils.ocrModelOnnxDet); // Preload OCR detection model path
-    final String modelOnnxRecPath = await Utils.getModelPath(Utils.ocrModelOnnxRec); // Preload OCR recognition model path
+    final String modelOnnxRecPath =
+        await Utils.getModelPath(Utils.ocrModelOnnxRec); // Preload OCR recognition model path
     final String contentsDict = await rootBundle.loadString(Utils.characterDictPath); // Preload OCR dictionary
 
     // Launch isolate for image processing
-    await Isolate.spawn(_processImageInBackground, [
-      receivePort.sendPort,
-      path,
-      yoloPath,
-      labelsRaw,
-      modelOnnxDetPath,
-      modelOnnxRecPath,
-      contentsDict
-    ]);
+    await Isolate.spawn(
+      _processImageInBackground,
+      <Object>[
+        receivePort.sendPort,
+        path,
+        yoloPath,
+        labelsRaw,
+        modelOnnxDetPath,
+        modelOnnxRecPath,
+        contentsDict,
+      ],
+    );
 
     // Listen and await results from the isolate
-    final data = await receivePort.first;
+    final dynamic data = await receivePort.first;
 
-    if (data['error'] != null) {
-      throw Exception(data['error']);
+    if ((data as dynamic)['error'] != null) {
+      throw Exception((data as dynamic)['error']);
     }
 
-    image = data['image'];
-    predictionResults = data['predictions'];
-    totalPredictionTimeMs = data['totalTime'];
+    image = (data as dynamic)['image'] as Uint8List;
+    predictionResults = (data as dynamic)['predictions'] as List<dynamic>;
+    totalPredictionTimeMs = (data as dynamic)['totalTime'] as int?;
 
     if (predictionResults == null || totalPredictionTimeMs == null) {
       throw Exception('Error processing image');
@@ -111,41 +116,42 @@ class AIComputerVision {
   }
 
   static void _processImageInBackground(List<dynamic> args) {
-    SendPort sendPort = args[0];
-    String path = args[1];
-    String yoloPath = args[2];
-    String labelsRaw = args[3];
-    String modelOnnxDetPath = args[4];
-    String modelOnnxRecPath = args[5];
-    String contentsDict = args[6];
+    final SendPort sendPort = args[0] as SendPort;
+    final String path = args[1] as String;
+    final String yoloPath = args[2] as String;
+    final String labelsRaw = args[3] as String;
+    final String modelOnnxDetPath = args[4] as String;
+    final String modelOnnxRecPath = args[5] as String;
+    final String contentsDict = args[6] as String;
     // Init ObjectDetection in isolate and process image
-    ObjectDetection detection = ObjectDetection();
-    _asyncImageProcessing(path, sendPort, detection, yoloPath, labelsRaw, modelOnnxDetPath,
-        modelOnnxRecPath, contentsDict);
+    final ObjectDetection detection = ObjectDetection();
+    _asyncImageProcessing(
+        path, sendPort, detection, yoloPath, labelsRaw, modelOnnxDetPath, modelOnnxRecPath, contentsDict);
   }
 
-  static void _asyncImageProcessing(
-      String path,
-      SendPort sendPort,
-      ObjectDetection detection,
-      String yoloPath,
-      String labelsRaw,
-      String modelOnnxDetPath,
-      String modelOnnxRecPath,
-      String contentsDict) async {
+  static Future<void> _asyncImageProcessing(
+    String path,
+    SendPort sendPort,
+    ObjectDetection detection,
+    String yoloPath,
+    String labelsRaw,
+    String modelOnnxDetPath,
+    String modelOnnxRecPath,
+    String contentsDict,
+  ) async {
     try {
-      final results = await detection.analyseImage(
-          path, yoloPath, labelsRaw, modelOnnxDetPath, modelOnnxRecPath, contentsDict);
+      final ImageAnalysisResult results =
+          await detection.analyseImage(path, yoloPath, labelsRaw, modelOnnxDetPath, modelOnnxRecPath, contentsDict);
       // Send image analysis results to main port
-      sendPort.send({
+      sendPort.send(<String, Object?>{
         'image': results.image,
         'predictions': results.predictions,
         'totalTime': results.totalPredictionTimeMs,
       });
-      print("Results sent from isolate"); // Debug print
+      debugPrint('Results sent from isolate'); // Debug print
     } catch (e) {
-      print("Error in isolate: $e");
-      sendPort.send({
+      debugPrint('Error in isolate: $e');
+      sendPort.send(<String, String>{
         'error': e.toString(),
       });
     }
