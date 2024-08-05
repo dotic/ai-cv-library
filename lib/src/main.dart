@@ -60,10 +60,10 @@ class AIComputerVision {
   }
 
 
-  Future<ImageAnalysisResult> pickAndProcessImage(ImageSource source) async {
-    final result = await imagePicker.pickImage(source: source);
+  Future<ImageAnalysisResult> pickAndProcessImage(ImageSource source, String? imagePath) async {
+    final String path = imagePath ?? await imagePicker.pickImage(source: source)?.path;
 
-    if (result == null) {
+    if (path == null || path.isEmpty) {
       throw Exception('No image selected');
     }
 
@@ -80,7 +80,7 @@ class AIComputerVision {
     // Launch isolate for image processing
     await Isolate.spawn(_processImageInBackground, [
       receivePort.sendPort,
-      result.path,
+      path,
       yoloPath,
       labelsRaw,
       modelOnnxDetPath,
