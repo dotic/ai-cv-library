@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:developer';
+import 'dart:io';
 import 'dart:isolate';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +20,19 @@ class AIComputerVision {
   ObjectDetection? objectDetection;
   List<dynamic>? predictionResults;
   int? totalPredictionTimeMs;
+
+  Future<bool> checkAvailableModels() async {
+    final String yoloModelPath = await Utils.getModelPath(Utils.modelYoloName);
+    final String ocrDetModelPath = await Utils.getModelPath(Utils.ocrModelOnnxDet);
+    final String ocrRecModelPath = await Utils.getModelPath(Utils.ocrModelOnnxRec);
+
+    if (File(yoloModelPath).existsSync() && File(ocrDetModelPath).existsSync() && File(ocrRecModelPath).existsSync()) {
+      return true;
+    } else {
+      log('Unable to load all needed models. Try downloading them.');
+      return false;
+    }
+  }
 
   Future<void> downloadModels(String yoloModelVersion) async {
     // Load s3 credentials

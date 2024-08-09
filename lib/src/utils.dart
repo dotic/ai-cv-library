@@ -14,10 +14,8 @@ class Utils {
   static const double scoreThreshold = 0.4;
 
   //ocr detection
-  static const String ocrModelOnnxDet =
-      'paddleocr_onnx_det_model.onnx'; //'paddleocr_onnx_det_model.onnx.enc';
-  static const String ocrModelOnnxRec =
-      'paddleocr_onnx_rec_model.onnx'; //'paddleocr_onnx_rec_model.onnx.enc';
+  static const String ocrModelOnnxDet = 'paddleocr_onnx_det_model.onnx'; //'paddleocr_onnx_det_model.onnx.enc';
+  static const String ocrModelOnnxRec = 'paddleocr_onnx_rec_model.onnx'; //'paddleocr_onnx_rec_model.onnx.enc';
   static const double detThresh = 0.3;
   static const int maxCandidates = 1000;
   static const int minSize = 3;
@@ -133,12 +131,7 @@ class Utils {
     }
 
     // Rearrange the points in the correct order
-    List<Tuple2<double, double>> box = [
-      points[index1],
-      points[index2],
-      points[index3],
-      points[index4]
-    ];
+    List<Tuple2<double, double>> box = [points[index1], points[index2], points[index3], points[index4]];
 
     // Calculate the shorter side of the bounding box
     double sside = math.min(boundingBox[1].item1, boundingBox[1].item2);
@@ -148,8 +141,8 @@ class Utils {
 
   // Get file path
   static Future<String> getModelPath(String filename) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$filename');
+    final Directory directory = await getApplicationDocumentsDirectory();
+    final File file = File('${directory.path}/$filename');
     return file.path;
   }
 
@@ -207,9 +200,7 @@ class Utils {
             String c = lTxt[i];
             if (i == 0 && i != maxI && maxI + 1 > 2) {
               // Check the two following elements
-              if (lNumbers.contains(lTxt[i + 1]) &&
-                  lNumbers.contains(lTxt[i + 2]) &&
-                  !lNumbers.contains(lTxt[i])) {
+              if (lNumbers.contains(lTxt[i + 1]) && lNumbers.contains(lTxt[i + 2]) && !lNumbers.contains(lTxt[i])) {
                 // c to numb
                 c = dCToN[lTxt[i].toUpperCase()]?.first ?? lTxt[i];
                 lTxt[i] = c;
@@ -225,9 +216,7 @@ class Utils {
               lTxt[i] = c;
             } else {
               // Check the previous and following elements
-              if (lNumbers.contains(lTxt[i - 1]) &&
-                  lNumbers.contains(lTxt[i + 1]) &&
-                  !lNumbers.contains(lTxt[i])) {
+              if (lNumbers.contains(lTxt[i - 1]) && lNumbers.contains(lTxt[i + 1]) && !lNumbers.contains(lTxt[i])) {
                 // c to numb
                 c = dCToN[lTxt[i].toUpperCase()]?.first ?? lTxt[i];
                 lTxt[i] = c;
@@ -396,8 +385,7 @@ class Utils {
   }
 
   // Scale and clip the coordinates of a box
-  static List<List<int>> scaleAndClipBox(
-      List<List<double>> box, int width, int srcH, int srcW, int height) {
+  static List<List<int>> scaleAndClipBox(List<List<double>> box, int width, int srcH, int srcW, int height) {
     for (var point in box) {
       // Scale the x-coordinate and clamp it within the range [0, srcW]
       point[0] = (point[0] / width * srcW).round().clamp(0, srcW).toDouble();

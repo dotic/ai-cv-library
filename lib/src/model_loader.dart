@@ -18,15 +18,12 @@ class ModelLoader {
   List<dynamic>? _predictions;
 
   // Download models from s3 bucket
-  static Future<void> downloadFileFromS3(
-      Map<String, dynamic> config, String yoloModelVersion) async {
+  static Future<void> downloadFileFromS3(Map<String, dynamic> config, String yoloModelVersion) async {
     try {
-      final credentials = AwsClientCredentials(
-          accessKey: config['awsAccessKey'], secretKey: config['awsSecretKey']);
+      final credentials = AwsClientCredentials(accessKey: config['awsAccessKey'], secretKey: config['awsSecretKey']);
       final s3 = S3(region: config['awsRegion'], credentials: credentials);
 
-      String modelYoloName =
-          "${(Utils.modelYoloName).replaceAll('.tflite', '')}_$yoloModelVersion.tflite";
+      String modelYoloName = "${(Utils.modelYoloName).replaceAll('.tflite', '')}_$yoloModelVersion.tflite";
       List<String> modelList = [Utils.ocrModelOnnxDet, Utils.ocrModelOnnxRec, modelYoloName];
       for (String filePath in modelList) {
         //final directory = (await getExternalStorageDirectory())!;
@@ -77,7 +74,7 @@ class ModelLoader {
     log('Loading interpreter options...');
     final interpreterOptions = InterpreterOptions();
     log('Loading interpreter...');
-    final fileYolo = File(yoloPath);
+    final File fileYolo = File(yoloPath);
     _interpreter = Interpreter.fromFile(fileYolo, options: interpreterOptions);
   }
 
@@ -132,18 +129,16 @@ class ModelLoader {
     return results;
   }
 
-  Future<List<dynamic>?> processPredict(img.Image imageInput, String modelOnnxDetPath,
-      String modelOnnxRecPath, String contentsDict) async {
+  Future<List<dynamic>?> processPredict(
+      img.Image imageInput, String modelOnnxDetPath, String modelOnnxRecPath, String contentsDict) async {
     //init prediction
     _predictions = [];
 
     //Convert image to matrix
-    final List<List<List<num>>> convertedImageToMatrix =
-        ImageProcessing.convertImageToMatrix(imageInput);
+    final List<List<List<num>>> convertedImageToMatrix = ImageProcessing.convertImageToMatrix(imageInput);
 
     // Convert image from channel last format to channel first format
-    final List<List<List<num>>> input =
-        ImageProcessing.convertChannelsLastToChannelsFirst(convertedImageToMatrix);
+    final List<List<List<num>>> input = ImageProcessing.convertChannelsLastToChannelsFirst(convertedImageToMatrix);
 
     //Yolo prediction
     //tflite prediction
@@ -164,14 +159,12 @@ class ModelLoader {
         await _processPboTag(r, imageInput, results);
       }
       // if tags "plaque_immatriculation" or "visage" are detected
-      if (r['cls'].toString().contains('plaque_immatriculation') ||
-          r['cls'].toString().contains('visage')) {
+      if (r['cls'].toString().contains('plaque_immatriculation') || r['cls'].toString().contains('visage')) {
         _processPlateOrFaceLabel(r, imageInput);
       }
       // if tag "etiquette" is detected
       if (r['cls'].toString().contains('etiquette')) {
-        await _processTagLabel(
-            r, imageInput, input, modelOnnxDetPath, modelOnnxRecPath, contentsDict);
+        await _processTagLabel(r, imageInput, input, modelOnnxDetPath, modelOnnxRecPath, contentsDict);
       }
 
       // Draw results bboxes
@@ -185,12 +178,9 @@ class ModelLoader {
   }
 
   Future<void> _processPboTag(Map<String, dynamic> r, img.Image imageInput, var results) async {
-    bool containsRef =
-        results.any((r) => ['facade', 'poteau', 'tuyau'].contains(r['cls'].toString()));
+    bool containsRef = results.any((r) => ['facade', 'poteau', 'tuyau'].contains(r['cls'].toString()));
     if (containsRef) {
-      var dfRef = results
-          .where((r) => ['facade', 'poteau', 'tuyau'].contains(r['cls'].toString()))
-          .toList();
+      var dfRef = results.where((r) => ['facade', 'poteau', 'tuyau'].contains(r['cls'].toString())).toList();
       String idPbo = "pbo_x1:${r['x1']}_y1:${r['y1']}_x2:${r['x2']}_y2:${r['y2']}";
       double minDistance = double.maxFinite;
       Map<String, dynamic>? refToCheck;
@@ -258,13 +248,8 @@ class ModelLoader {
     }
   }
 
-  Future<void> _processTagLabel(
-      Map<String, dynamic> r,
-      img.Image imageInput,
-      List<List<List<num>>> input,
-      String modelOnnxDetPath,
-      String modelOnnxRecPath,
-      String contentsDict) async {
+  Future<void> _processTagLabel(Map<String, dynamic> r, img.Image imageInput, List<List<List<num>>> input,
+      String modelOnnxDetPath, String modelOnnxRecPath, String contentsDict) async {
     log("Tag detected");
     log("Reading text ...");
 
@@ -278,12 +263,11 @@ class ModelLoader {
     List<List<double>> shapeList = [imagePreprocessed.item3];
 
     // OCR detection
-    List<dynamic> detectionResult =
-        await _performOcrDetection(dataImageNorm, shapeList, modelOnnxDetPath);
+    List<dynamic> detectionResult = await _performOcrDetection(dataImageNorm, shapeList, modelOnnxDetPath);
 
     // OCR recognition
-    List<Tuple2<String, double>> recognitionResult = await _performOcrRecognition(
-        input, imageInputList, detectionResult, modelOnnxRecPath, contentsDict);
+    List<Tuple2<String, double>> recognitionResult =
+        await _performOcrRecognition(input, imageInputList, detectionResult, modelOnnxRecPath, contentsDict);
 
     // Improve OCR prediction
     List<dynamic> improvedText = Utils.improveTextPrediction(recognitionResult);
@@ -300,8 +284,8 @@ class ModelLoader {
     }
   }
 
-  Future<List<dynamic>> _performOcrDetection(List<List<List<List<double>>>> dataImageNorm,
-      List<List<double>> shapeList, String modelOnnxDetPath) async {
+  Future<List<dynamic>> _performOcrDetection(
+      List<List<List<List<double>>>> dataImageNorm, List<List<double>> shapeList, String modelOnnxDetPath) async {
     var outputDet = await _predictWithOnnxDetection(dataImageNorm, modelOnnxDetPath);
     return _processDetectionResults(outputDet, shapeList);
   }
@@ -316,14 +300,12 @@ class ModelLoader {
       dataImageNorm.shape[3]
     ];
     List<List<List<Float32List>>> inputToFloat = dataImageNorm
-        .map((list3D) => list3D
-            .map((list2D) => list2D.map((innerList) => Float32List.fromList(innerList)).toList())
-            .toList())
+        .map((list3D) =>
+            list3D.map((list2D) => list2D.map((innerList) => Float32List.fromList(innerList)).toList()).toList())
         .toList();
 
     String inputDictKey = 'x';
-    var outputDet =
-        (await onnxPred(inputToFloat, onnxDetShape, modelOnnxDetPath, inputDictKey))[0].value;
+    var outputDet = (await onnxPred(inputToFloat, onnxDetShape, modelOnnxDetPath, inputDictKey))[0].value;
 
     return outputDet;
   }
@@ -484,12 +466,10 @@ class ModelLoader {
       int endImgNo = math.min(imgNum, begImgNo + batchNum);
 
       // Normalize image
-      List<List<List<List<double>>>> normImgBatch =
-          _normalizeForOcr(imgCropList, indices, begImgNo, endImgNo);
+      List<List<List<List<double>>>> normImgBatch = _normalizeForOcr(imgCropList, indices, begImgNo, endImgNo);
 
       // Onnx recognition prediction
-      List<List<List<double>>> preds =
-          await _predictWithOnnxRecognition(normImgBatch, modelOnnxRecPath);
+      List<List<List<double>>> preds = await _predictWithOnnxRecognition(normImgBatch, modelOnnxRecPath);
 
       // Process and decode Ocr results
       List<Tuple2<String, double>> recResult = await _decodeOcrResults(preds, contentsDict);
@@ -550,8 +530,7 @@ class ModelLoader {
     List<List<List<int>>> boxes0 = List<List<List<int>>>.from(sortedBoxes);
     // Checks and adjusts boxes
     for (int i = 0; i < numBoxes - 1; i++) {
-      if (((boxes0[i + 1][0][1] - boxes0[i][0][1]).abs() < 10) &&
-          (boxes0[i + 1][0][0] < boxes0[i][0][0])) {
+      if (((boxes0[i + 1][0][1] - boxes0[i][0][1]).abs() < 10) && (boxes0[i + 1][0][0] < boxes0[i][0][0])) {
         var tmp = boxes0[i];
         boxes0[i] = boxes0[i + 1];
         boxes0[i + 1] = tmp;
@@ -591,8 +570,7 @@ class ModelLoader {
 
       // Apply warp perspective
       List<List<List<int>>> srcImageDataTemp = imageInputList
-          .map((list2D) =>
-              list2D.map((list1D) => list1D.map((value) => (value).toInt()).toList()).toList())
+          .map((list2D) => list2D.map((list1D) => list1D.map((value) => (value).toInt()).toList()).toList())
           .toList();
 
       Uint8List srcImageData = ImageProcessing.convertNestedListToUint8List(srcImageDataTemp);
@@ -648,8 +626,7 @@ class ModelLoader {
       // Resize image for OCR input
       img.Image originalImage = ImageProcessing.imgCropListToImageObject(imgCropList[indices[ino]]);
       img.Image resizedImageObj = img.copyResize(originalImage, width: resizedW, height: imgH);
-      List<List<List<double>>> resizedImage =
-          ImageProcessing.imageObjectToImgCropList(resizedImageObj);
+      List<List<List<double>>> resizedImage = ImageProcessing.imageObjectToImgCropList(resizedImageObj);
 
       // Normalize pixel values
       for (int i = 0; i < resizedImage.length; i++) {
@@ -660,15 +637,12 @@ class ModelLoader {
         }
       }
       resizedImage = ImageProcessing.convertChannelsLastToChannelsFirst(resizedImage)
-          .map((list2D) =>
-              list2D.map((list) => list.map((item) => item.toDouble()).toList()).toList())
+          .map((list2D) => list2D.map((list) => list.map((item) => item.toDouble()).toList()).toList())
           .toList();
 
       // Create a normalized image batch for OCR
       List<List<List<double>>> normImg = List.generate(
-          imgC,
-          (c) => List.generate(imgH, (h) => List.generate(imgW, (w) => 0.0, growable: false),
-              growable: false),
+          imgC, (c) => List.generate(imgH, (h) => List.generate(imgW, (w) => 0.0, growable: false), growable: false),
           growable: false);
       for (int c = 0; c < imgC; c++) {
         for (int h = 0; h < imgH; h++) {
@@ -693,9 +667,8 @@ class ModelLoader {
       normImgBatch.shape[3]
     ];
     List<List<List<Float32List>>> inputToFloat = normImgBatch
-        .map((list3D) => list3D
-            .map((list2D) => list2D.map((innerList) => Float32List.fromList(innerList)).toList())
-            .toList())
+        .map((list3D) =>
+            list3D.map((list2D) => list2D.map((innerList) => Float32List.fromList(innerList)).toList()).toList())
         .toList();
 
     String inputDictKey = 'x';
@@ -705,8 +678,7 @@ class ModelLoader {
   }
 
   // Decode OCR results into human-readable text
-  Future<List<Tuple2<String, double>>> _decodeOcrResults(
-      List<List<List<double>>> preds, String contents) async {
+  Future<List<Tuple2<String, double>>> _decodeOcrResults(List<List<List<double>>> preds, String contents) async {
     // Load and prepare the character dictionary
     List<String> lines = contents.split('\n');
     List<String> characters = lines.map((line) => line.trim()).toList();
@@ -725,8 +697,7 @@ class ModelLoader {
       List<int> matrixIdx = [];
       List<double> matrixProb = [];
       for (var sublist in matrix) {
-        int maxIdx =
-            sublist.indexWhere((x) => x == sublist.map((e) => e.toDouble()).reduce(math.max));
+        int maxIdx = sublist.indexWhere((x) => x == sublist.map((e) => e.toDouble()).reduce(math.max));
         matrixIdx.add(maxIdx);
         matrixProb.add(sublist[maxIdx]);
       }
@@ -751,9 +722,7 @@ class ModelLoader {
         confList.add(textProbs[batchIdx][idx]);
       }
       String text = charList.join();
-      double confidence = confList.isNotEmpty
-          ? confList.reduce((a, b) => a + b) / confList.length
-          : 0.0; // = np.mean
+      double confidence = confList.isNotEmpty ? confList.reduce((a, b) => a + b) / confList.length : 0.0; // = np.mean
       recResult.add(Tuple2<String, double>(text, confidence));
     }
     return recResult;
