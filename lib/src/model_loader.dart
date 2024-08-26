@@ -75,7 +75,9 @@ class ModelLoader {
     final interpreterOptions = InterpreterOptions();
     log('Loading interpreter...');
     final File fileYolo = File(yoloPath);
+    print('fileYolo : ${fileYolo.toString()}');
     _interpreter = Interpreter.fromFile(fileYolo, options: interpreterOptions);
+    print('_interpreter : ${_interpreter.toString()}');
   }
 
   // Load labels
