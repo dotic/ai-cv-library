@@ -76,8 +76,12 @@ class ModelLoader {
     log('Loading interpreter...');
     final File fileYolo = File(yoloPath);
     print('fileYolo : ${fileYolo.toString()}');
+    if (_interpreter != null) {
+      _interpreter?.close();
+    }
     _interpreter = Interpreter.fromFile(fileYolo, options: interpreterOptions);
     print('_interpreter : ${_interpreter.toString()}');
+
   }
 
   // Load labels
@@ -174,6 +178,9 @@ class ModelLoader {
       String toWrite = '${r["cls"]} ${r["score"]}';
       Utils.drawLabel(imageInput, toWrite, r["x1"] + 4, r["y1"] + 4);
     }
+
+    _interpreter?.close();
+
     log('Done.');
 
     return _predictions;
