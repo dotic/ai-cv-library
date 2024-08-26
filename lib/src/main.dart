@@ -120,6 +120,9 @@ class AIComputerVision {
     // Listen and await results from the isolate
     final dynamic data = await receivePort.first;
 
+    print('receivePort : ${receivePort.toString()}');
+    print('data : ${data.toString()}');
+
     print("5!!!!!");
 
     if ((data as dynamic)['error'] != null) {
@@ -129,6 +132,10 @@ class AIComputerVision {
     image = (data as dynamic)['image'] as Uint8List;
     predictionResults = (data as dynamic)['predictions'] as List<dynamic>;
     totalPredictionTimeMs = (data as dynamic)['totalTime'] as int?;
+
+    print('image : ${image.toString()}');
+    print('predictionResults : ${predictionResults.toString()}');
+    print('totalPredictionTimeMs : ${totalPredictionTimeMs.toString()}');
 
     print("6!!!!!");
 
