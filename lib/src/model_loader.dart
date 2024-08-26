@@ -81,7 +81,6 @@ class ModelLoader {
     }*/
     _interpreter = Interpreter.fromFile(fileYolo, options: interpreterOptions);
     print('_interpreter : ${_interpreter.toString()}');
-
   }
 
   // Load labels
@@ -181,7 +180,7 @@ class ModelLoader {
 
     log('Done.');
 
-    _interpreter?.close();
+    //_interpreter?.close();
 
     return _predictions;
   }
