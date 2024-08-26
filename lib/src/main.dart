@@ -80,7 +80,12 @@ class AIComputerVision {
 
     print("1!!!!!");
 
+    print("source(api) : ${source.toString()}");
+    print("imagePath(api) : ${imagePath.toString()}");
+
     final String? path = imagePath ?? (await imagePicker.pickImage(source: source))?.path;
+
+    print("path(api) : ${path.toString()}");
 
     print("2!!!!!");
 
