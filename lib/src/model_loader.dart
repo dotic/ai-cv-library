@@ -76,9 +76,9 @@ class ModelLoader {
     log('Loading interpreter...');
     final File fileYolo = File(yoloPath);
     print('fileYolo : ${fileYolo.toString()}');
-    if (_interpreter != null) {
+    /*if (_interpreter != null) {
       _interpreter?.close();
-    }
+    }*/
     _interpreter = Interpreter.fromFile(fileYolo, options: interpreterOptions);
     print('_interpreter : ${_interpreter.toString()}');
 
@@ -179,9 +179,9 @@ class ModelLoader {
       Utils.drawLabel(imageInput, toWrite, r["x1"] + 4, r["y1"] + 4);
     }
 
-    _interpreter?.close();
-
     log('Done.');
+
+    _interpreter?.close();
 
     return _predictions;
   }
