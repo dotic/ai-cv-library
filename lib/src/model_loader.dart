@@ -76,9 +76,9 @@ class ModelLoader {
     log('Loading interpreter...');
     final File fileYolo = File(yoloPath);
     print('fileYolo : ${fileYolo.toString()}');
-    /*if (_interpreter != null) {
+    if (_interpreter != null) {
       _interpreter?.close();
-    }*/
+    }
     _interpreter = Interpreter.fromFile(fileYolo, options: interpreterOptions);
     print('_interpreter : ${_interpreter.toString()}');
   }
@@ -180,7 +180,7 @@ class ModelLoader {
 
     log('Done.');
 
-    //_interpreter?.close();
+    _interpreter?.close();
 
     return _predictions;
   }
