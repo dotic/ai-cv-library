@@ -14,11 +14,15 @@ class ImageProcessing {
     log('Analysing image...');
     // Reading image bytes from file
     final imageData = File(imagePath).readAsBytesSync();
+    print("Ok read image as bytes");
     // Decoding image
     final image = img.decodeImage(imageData);
+    print("Ok decode image");
 
     //Resizing and add border [640, 640]
     final img.Image imageInput = ImageProcessing.letterbox(image!);
+    print("Ok resize image");
+
     return imageInput;
   }
 
