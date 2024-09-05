@@ -156,7 +156,12 @@ class ModelLoader {
     print("running interpreter ...");
     print("input : $input");
     print("output : $output");
-    _interpreter!.run([input], output);
+    try {
+      _interpreter?.run(input, output);
+      log('Interpreter ran successfully.');
+    } catch (e) {
+      log('Error during model inference: $e');
+    }
     print("ok run interpreter");
 
     final results = processOutputs(output);
