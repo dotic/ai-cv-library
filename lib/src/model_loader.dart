@@ -140,15 +140,22 @@ class ModelLoader {
     _predictions = [];
 
     //Convert image to matrix
+    print("converting to matrix ...");
     final List<List<List<num>>> convertedImageToMatrix = ImageProcessing.convertImageToMatrix(imageInput);
+    print("ok img to matrix");
 
     // Convert image from channel last format to channel first format
+    print("converting to channel first format ...");
     final List<List<List<num>>> input = ImageProcessing.convertChannelsLastToChannelsFirst(convertedImageToMatrix);
+    print("ok convert channel first");
 
     //Yolo prediction
     //tflite prediction
     final output = List<num>.filled(100 * 7, 0).reshape([100, 7]);
+
+    print("running interpreter ...");
     _interpreter!.run([input], output);
+    print("ok run interpreter");
 
     final results = processOutputs(output);
 
