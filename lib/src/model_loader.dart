@@ -154,6 +154,8 @@ class ModelLoader {
     final output = List<num>.filled(100 * 7, 0).reshape([100, 7]);
 
     print("running interpreter ...");
+    print("input : $input");
+    print("output : $output");
     _interpreter!.run([input], output);
     print("ok run interpreter");
 
