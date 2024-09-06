@@ -80,6 +80,15 @@ class ModelLoader {
     if (_interpreter != null) {
       _interpreter?.close();
     }
+
+    if (Platform.isAndroid) {
+      interpreterOptions.addDelegate(XNNPackDelegate());
+    }
+
+    if (Platform.isIOS) {
+      interpreterOptions.addDelegate(GpuDelegate());
+    }
+
     _interpreter = Interpreter.fromFile(fileYolo, options: interpreterOptions);
     print('_interpreter initialized: ${_interpreter != null}');
   }
