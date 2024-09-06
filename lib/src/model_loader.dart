@@ -72,7 +72,7 @@ class ModelLoader {
   // Load Yolo model
   Future<void> loadYoloModel(String yoloPath) async {
     log('Loading interpreter options...');
-    final interpreterOptions = InterpreterOptions();
+    final interpreterOptions = InterpreterOptions()..threads = Platform.numberOfProcessors;
     log('Loading interpreter...');
     final File fileYolo = File(yoloPath);
     print('fileYolo : ${fileYolo.toString()}');
