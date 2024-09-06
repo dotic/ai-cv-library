@@ -158,7 +158,7 @@ class ModelLoader {
     print("input : $input");
     print("output : $output");
     try {
-      _interpreter?.run(input, output);
+      _interpreter?.run([input], output);
       log('Interpreter ran successfully.');
     } catch (e) {
       log('Error during model inference: $e');
