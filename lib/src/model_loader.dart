@@ -72,7 +72,7 @@ class ModelLoader {
   // Load Yolo model
   Future<void> loadYoloModel(String yoloPath) async {
     log('Loading interpreter options...');
-    final interpreterOptions = InterpreterOptions()..threads = Platform.numberOfProcessors;
+    final interpreterOptions = InterpreterOptions(); // ..threads = Platform.numberOfProcessors;
     log('Loading interpreter...');
     final File fileYolo = File(yoloPath);
     print('fileYolo : ${fileYolo.toString()}');
@@ -81,7 +81,7 @@ class ModelLoader {
       _interpreter?.close();
     }
 
-    _interpreter = Interpreter.fromFile(fileYolo, options: interpreterOptions);
+    _interpreter = await Interpreter.fromFile(fileYolo, options: interpreterOptions);
     print('_interpreter initialized: ${_interpreter != null}');
   }
 
@@ -159,9 +159,12 @@ class ModelLoader {
     print("input : $input");
     print("output : $output");
     try {
+      print("hey1");
       _interpreter?.run([input], output);
+      print("hey2");
       log('Interpreter ran successfully.');
     } catch (e) {
+      print("hey3");
       log('Error during model inference: $e');
     }
     print("ok run interpreter");
