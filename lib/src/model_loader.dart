@@ -16,6 +16,8 @@ class ModelLoader {
   Interpreter? _interpreter;
   List<String>? _labels;
   List<dynamic>? _predictions;
+  static OrtEnv? _ortEnv;
+  static OrtSession? _session;
 
   // Download models from s3 bucket
   static Future<void> downloadFileFromS3(Map<String, dynamic> config, String yoloModelVersion) async {
@@ -72,7 +74,7 @@ class ModelLoader {
   // Load Yolo model
   Future<void> loadYoloModel(String yoloPath) async {
     log('Loading interpreter options...');
-    final interpreterOptions = InterpreterOptions(); // ..threads = Platform.numberOfProcessors;
+    final interpreterOptions = InterpreterOptions()..threads = Platform.numberOfProcessors;
     log('Loading interpreter...');
     final File fileYolo = File(yoloPath);
     print('fileYolo : ${fileYolo.toString()}');
@@ -91,23 +93,46 @@ class ModelLoader {
     _labels = labelsRaw.split('\n');
   }
 
-  // Perform predictions using an ONNX model
-  static dynamic onnxPred(List data, List<int> shape, String modelPath, String inputDictKey) async {
-    OrtEnv.instance.init();
+  // Initialization of ONNX environment and session
+  static Future<void> initializeOnnxModel(String modelPath) async {
+    if (_ortEnv == null) {
+      _ortEnv = OrtEnv.instance;
+      _ortEnv!.init(); // Initialize ONNX environment if not already initialized
+    }
+
     final sessionOptions = OrtSessionOptions();
     final modelFile = File(modelPath);
     final bytes = await modelFile.readAsBytes();
-    final session = OrtSession.fromBuffer(bytes, sessionOptions);
-    final runOptions = OrtRunOptions();
-    final inputOrt = OrtValueTensor.createTensorWithDataList(data, shape);
-    final inputs = {inputDictKey: inputOrt};
-    final outputs = session.run(runOptions, inputs);
-    inputOrt.release();
-    runOptions.release();
-    sessionOptions.release();
-    OrtEnv.instance.release();
-    return outputs;
+
+    _session = OrtSession.fromBuffer(bytes, sessionOptions); // Load the session with the model
   }
+
+// Perform prediction using ONNX model
+  static Future<dynamic> onnxPred(List data, List<int> shape, String modelPath, String inputDictKey) async {
+    await initializeOnnxModel(modelPath); // Load the model when needed
+
+    if (_session == null) {
+      throw Exception("ONNX model is not initialized");
+    }
+
+    final runOptions = OrtRunOptions(); // Create run options
+    final inputOrt = OrtValueTensor.createTensorWithDataList(data, shape); // Create input tensor
+    final inputs = {inputDictKey: inputOrt};
+
+    try {
+      final outputs = _session!.run(runOptions, inputs); // Run the session with the inputs
+      return outputs;
+    } finally {
+      // Properly release all resources after prediction
+      inputOrt.release();
+      runOptions.release();
+      _session?.release(); // Release the session after use
+      _session = null;     // Reset session to null for next prediction
+      _ortEnv?.release();  // Release ONNX environment if needed
+      _ortEnv = null;
+    }
+  }
+
 
   // Format output
   List<dynamic> processOutputs(List<dynamic> output) {
@@ -161,6 +186,7 @@ class ModelLoader {
     try {
       print("hey1");
       _interpreter?.run([input], output);
+      _interpreter?.close();
       print("hey2");
       log('Interpreter ran successfully.');
     } catch (e) {
@@ -198,9 +224,6 @@ class ModelLoader {
     }
 
     log('Done.');
-
-    _interpreter?.close();
-
     return _predictions;
   }
 

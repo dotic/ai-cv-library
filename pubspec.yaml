@@ -20,7 +20,7 @@ dependencies:
   intl: ^0.19.0
   native_opencv:
     path: native_opencv
-  onnxruntime: ^1.1.0
+  onnxruntime: ^1.4.1
   path_provider: ^2.1.1
   tflite_flutter: ^0.10.2
   tuple: ^2.0.0
