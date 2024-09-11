@@ -36,7 +36,7 @@ class AIComputerVision {
 
   Future<void> downloadModels(String yoloModelVersion) async {
     // Load s3 credentials
-    final String s3Cred = await rootBundle.loadString('assets/aws-credentials/credentials.json');
+    final String s3Cred = await rootBundle.loadString('assets/aws/credentials.json');
     final Map<String, dynamic> jsonS3Cred = json.decode(s3Cred) as Map<String, dynamic>;
     // Download models
     return ModelLoader.downloadFileFromS3(jsonS3Cred, yoloModelVersion);
