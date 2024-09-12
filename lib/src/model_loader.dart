@@ -214,8 +214,8 @@ class ModelLoader {
       //add to global prediction list
       _predictions!.add(r);
 
-      print("-----");
-      print(r);
+      log("-----");
+      log(r.toString());
 
       // if tag "pbo" is detected and ref is true
       if (r['cls'].toString().contains('pbo')) {
@@ -336,7 +336,7 @@ class ModelLoader {
 
     // Improve OCR prediction
     List<dynamic> improvedText = Utils.improveTextPrediction(recognitionResult);
-    log(improvedText as String);
+    log(improvedText.toString());
 
     // Add to global prediction list
     if (improvedText[0].isNotEmpty) {
@@ -544,7 +544,7 @@ class ModelLoader {
     }
 
     List<Tuple2<String, double>> filterRecRes = _processFilterRecognitionResults(recRes, dtBoxes);
-    log(filterRecRes as String);
+    log(filterRecRes.toString());
 
     return filterRecRes;
   }
