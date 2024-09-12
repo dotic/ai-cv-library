@@ -18,6 +18,7 @@ class ModelLoader {
   List<dynamic>? _predictions;
   static OrtEnv? _ortEnv;
   static OrtSession? _session;
+  static List<OrtValue?>? _outputs;
 
   // Download models from s3 bucket
   static Future<void> downloadFileFromS3(Map<String, dynamic> config, String yoloModelVersion) async {
@@ -95,12 +96,23 @@ class ModelLoader {
 
   // Initialization of ONNX environment and session
   static Future<void> initializeOnnxModel(String modelPath) async {
+    print("init onnx model");
     if (_ortEnv == null) {
       _ortEnv = OrtEnv.instance;
       _ortEnv!.init(); // Initialize ONNX environment if not already initialized
     }
 
-    final sessionOptions = OrtSessionOptions();
+    final sessionOptions = OrtSessionOptions()
+      ..setInterOpNumThreads(1)
+      ..setIntraOpNumThreads(1)
+      ..setSessionGraphOptimizationLevel(GraphOptimizationLevel.ortEnableAll);
+
+    // Ensure that _session is not reinitialized unless necessary
+    if (_session != null) {
+      _session!.release();
+      _session = null;
+    }
+
     final modelFile = File(modelPath);
     final bytes = await modelFile.readAsBytes();
 
@@ -109,6 +121,9 @@ class ModelLoader {
 
 // Perform prediction using ONNX model
   static Future<dynamic> onnxPred(List data, List<int> shape, String modelPath, String inputDictKey) async {
+
+    print("onnxPred modelPath: $modelPath");
+
     await initializeOnnxModel(modelPath); // Load the model when needed
 
     if (_session == null) {
@@ -120,19 +135,32 @@ class ModelLoader {
     final inputs = {inputDictKey: inputOrt};
 
     try {
-      final outputs = _session!.run(runOptions, inputs); // Run the session with the inputs
-      return outputs;
+      _outputs = await _session!.runAsync(runOptions, inputs); // Run the session with the inputs
+      return _outputs;
     } finally {
-      // Properly release all resources after prediction
+      // Properly release resources after prediction
       inputOrt.release();
       runOptions.release();
-      _session?.release(); // Release the session after use
-      _session = null;     // Reset session to null for next prediction
-      _ortEnv?.release();  // Release ONNX environment if needed
-      _ortEnv = null;
+
+      if (_session != null) {
+        _session!.release();  // Release session after each use
+        _session = null;
+      }
+
+      if (_ortEnv != null) {
+        _ortEnv!.release();   // Release ONNX environment only if needed
+        _ortEnv = null;
+      }
     }
   }
 
+  void releaseOutputs(){
+    if(_outputs != null){
+      _outputs!.forEach((element) {
+        element?.release();
+      });
+    }
+  }
 
   // Format output
   List<dynamic> processOutputs(List<dynamic> output) {
@@ -314,10 +342,12 @@ class ModelLoader {
 
     // OCR detection
     List<dynamic> detectionResult = await _performOcrDetection(dataImageNorm, shapeList, modelOnnxDetPath);
+    releaseOutputs();
 
     // OCR recognition
     List<Tuple2<String, double>> recognitionResult =
         await _performOcrRecognition(input, imageInputList, detectionResult, modelOnnxRecPath, contentsDict);
+    releaseOutputs();
 
     // Improve OCR prediction
     List<dynamic> improvedText = Utils.improveTextPrediction(recognitionResult);
