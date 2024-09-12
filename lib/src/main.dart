@@ -119,6 +119,9 @@ class AIComputerVision {
     predictionResults = (data as dynamic)['predictions'] as List<dynamic>;
     totalPredictionTimeMs = (data as dynamic)['totalTime'] as int?;
 
+    print('predictionResults : ${predictionResults.toString()}');
+    print('totalPredictionTimeMs : ${totalPredictionTimeMs.toString()}');
+
     if (predictionResults == null || totalPredictionTimeMs == null) {
       throw Exception('Error processing image');
     }
