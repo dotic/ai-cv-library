@@ -16,6 +16,9 @@ class ModelLoader {
   Interpreter? _interpreter;
   List<String>? _labels;
   List<dynamic>? _predictions;
+  static OrtEnv? _ortEnv;
+  static OrtSession? _session;
+  static List<OrtValue?>? _outputs;
 
   // Download models from s3 bucket
   static Future<void> downloadFileFromS3(Map<String, dynamic> config, String yoloModelVersion) async {
@@ -72,15 +75,14 @@ class ModelLoader {
   // Load Yolo model
   Future<void> loadYoloModel(String yoloPath) async {
     log('Loading interpreter options...');
-    final interpreterOptions = InterpreterOptions();
+    final interpreterOptions = InterpreterOptions()..threads = Platform.numberOfProcessors;
     log('Loading interpreter...');
     final File fileYolo = File(yoloPath);
-    print('fileYolo : ${fileYolo.toString()}');
     if (_interpreter != null) {
       _interpreter?.close();
     }
-    _interpreter = Interpreter.fromFile(fileYolo, options: interpreterOptions);
-    print('_interpreter : ${_interpreter.toString()}');
+    _interpreter = await Interpreter.fromFile(fileYolo, options: interpreterOptions);
+    log('_interpreter initialized: ${_interpreter != null}');
   }
 
   // Load labels
@@ -89,22 +91,69 @@ class ModelLoader {
     _labels = labelsRaw.split('\n');
   }
 
-  // Perform predictions using an ONNX model
-  static dynamic onnxPred(List data, List<int> shape, String modelPath, String inputDictKey) async {
-    OrtEnv.instance.init();
-    final sessionOptions = OrtSessionOptions();
+  // Initialization of ONNX environment and session
+  static Future<void> initializeOnnxModel(String modelPath) async {
+    log("init onnx model");
+    if (_ortEnv == null) {
+      _ortEnv = OrtEnv.instance;
+      _ortEnv!.init(); // Initialize ONNX environment if not already initialized
+    }
+
+    final sessionOptions = OrtSessionOptions()
+      ..setInterOpNumThreads(1)
+      ..setIntraOpNumThreads(1)
+      ..setSessionGraphOptimizationLevel(GraphOptimizationLevel.ortEnableAll);
+
+    // Ensure that _session is not reinitialized unless necessary
+    if (_session != null) {
+      _session!.release();
+      _session = null;
+    }
+
     final modelFile = File(modelPath);
     final bytes = await modelFile.readAsBytes();
-    final session = OrtSession.fromBuffer(bytes, sessionOptions);
-    final runOptions = OrtRunOptions();
-    final inputOrt = OrtValueTensor.createTensorWithDataList(data, shape);
+
+    _session = OrtSession.fromBuffer(bytes, sessionOptions); // Load the session with the model
+  }
+
+// Perform prediction using ONNX model
+  static Future<dynamic> onnxPred(List data, List<int> shape, String modelPath, String inputDictKey) async {
+    await initializeOnnxModel(modelPath); // Load the model when needed
+
+    if (_session == null) {
+      throw Exception("ONNX model is not initialized");
+    }
+
+    final runOptions = OrtRunOptions(); // Create run options
+    final inputOrt = OrtValueTensor.createTensorWithDataList(data, shape); // Create input tensor
     final inputs = {inputDictKey: inputOrt};
-    final outputs = session.run(runOptions, inputs);
-    inputOrt.release();
-    runOptions.release();
-    sessionOptions.release();
-    OrtEnv.instance.release();
-    return outputs;
+
+    try {
+      _outputs = await _session!.runAsync(runOptions, inputs); // Run the session with the inputs
+      return _outputs;
+    } finally {
+      // Properly release resources after prediction
+      inputOrt.release();
+      runOptions.release();
+
+      if (_session != null) {
+        _session!.release();  // Release session after each use
+        _session = null;
+      }
+
+      if (_ortEnv != null) {
+        _ortEnv!.release();   // Release ONNX environment only if needed
+        _ortEnv = null;
+      }
+    }
+  }
+
+  void releaseOutputs(){
+    if(_outputs != null){
+      _outputs!.forEach((element) {
+        element?.release();
+      });
+    }
   }
 
   // Format output
@@ -148,7 +197,16 @@ class ModelLoader {
     //Yolo prediction
     //tflite prediction
     final output = List<num>.filled(100 * 7, 0).reshape([100, 7]);
-    _interpreter!.run([input], output);
+
+    log("running interpreter ...");
+    try {
+      _interpreter?.run([input], output);
+      _interpreter?.close();
+      log('Interpreter ran successfully.');
+    } catch (e) {
+      log('Error during model inference: $e');
+    }
+    log("ok run interpreter");
 
     final results = processOutputs(output);
 
@@ -179,9 +237,6 @@ class ModelLoader {
     }
 
     log('Done.');
-
-    _interpreter?.close();
-
     return _predictions;
   }
 
@@ -272,10 +327,12 @@ class ModelLoader {
 
     // OCR detection
     List<dynamic> detectionResult = await _performOcrDetection(dataImageNorm, shapeList, modelOnnxDetPath);
+    releaseOutputs();
 
     // OCR recognition
     List<Tuple2<String, double>> recognitionResult =
         await _performOcrRecognition(input, imageInputList, detectionResult, modelOnnxRecPath, contentsDict);
+    releaseOutputs();
 
     // Improve OCR prediction
     List<dynamic> improvedText = Utils.improveTextPrediction(recognitionResult);
