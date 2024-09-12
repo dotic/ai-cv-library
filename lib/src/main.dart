@@ -77,14 +77,6 @@ class AIComputerVision {
     ImageSource source, {
     String? imagePath,
   }) async {
-<<<<<<< debug-ios
-=======
-    print("1!!!!!");
-
-    print("source(api) : ${source.toString()}");
-    print("imagePath(api) : ${imagePath.toString()}");
-
->>>>>>> main
     final String? path = imagePath ?? (await imagePicker.pickImage(source: source))?.path;
 
     if (path == null || path.isEmpty) {
