@@ -77,23 +77,11 @@ class AIComputerVision {
     ImageSource source, {
     String? imagePath,
   }) async {
-
-    print("1!!!!!");
-
-    print("source(api) : ${source.toString()}");
-    print("imagePath(api) : ${imagePath.toString()}");
-
     final String? path = imagePath ?? (await imagePicker.pickImage(source: source))?.path;
-
-    print("path(api) : ${path.toString()}");
-
-    print("2!!!!!");
 
     if (path == null || path.isEmpty) {
       throw Exception('No image selected');
     }
-
-    print("3!!!!!");
 
     // Create a port to receive data from the isolate
     final ReceivePort receivePort = ReceivePort();
@@ -105,8 +93,6 @@ class AIComputerVision {
     final String modelOnnxRecPath =
         await Utils.getModelPath(Utils.ocrModelOnnxRec); // Preload OCR recognition model path
     final String contentsDict = await rootBundle.loadString(Utils.characterDictPath); // Preload OCR dictionary
-
-    print("4!!!!!");
 
     // Launch isolate for image processing
     await Isolate.spawn(
@@ -125,11 +111,6 @@ class AIComputerVision {
     // Listen and await results from the isolate
     final dynamic data = await receivePort.first;
 
-    print('receivePort : ${receivePort.toString()}');
-    print('data : ${data.toString()}');
-
-    print("5!!!!!");
-
     if ((data as dynamic)['error'] != null) {
       throw Exception((data as dynamic)['error']);
     }
@@ -137,12 +118,6 @@ class AIComputerVision {
     image = (data as dynamic)['image'] as Uint8List;
     predictionResults = (data as dynamic)['predictions'] as List<dynamic>;
     totalPredictionTimeMs = (data as dynamic)['totalTime'] as int?;
-
-    print('image : ${image.toString()}');
-    print('predictionResults : ${predictionResults.toString()}');
-    print('totalPredictionTimeMs : ${totalPredictionTimeMs.toString()}');
-
-    print("6!!!!!");
 
     if (predictionResults == null || totalPredictionTimeMs == null) {
       throw Exception('Error processing image');

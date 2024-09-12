@@ -15,20 +15,14 @@ class ObjectDetection {
     int totalPredictionTimeStart = DateTime.now().millisecondsSinceEpoch;
 
     // Init Yolo model
-    print("Initializing yolo model ...");
     await initializeModel(yoloPath, labelsRaw);
-    print("ok init yolo");
 
     // Load and prepare the image for object detection
-    print("loading image ...");
     final img.Image imageInput = ImageProcessing.loadImage(imagePath);
-    print("ok image loaded");
 
     // Perform object detection on the image
-    print("predict processing ...");
     final predictions = await _modelLoader.processPredict(
         imageInput, modelOnnxDetPath, modelOnnxRecPath, contentsDict);
-    print("ok predict");
 
     // Calculate the total prediction time
     int totalPredictionTimeMs =

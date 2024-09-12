@@ -78,14 +78,11 @@ class ModelLoader {
     final interpreterOptions = InterpreterOptions()..threads = Platform.numberOfProcessors;
     log('Loading interpreter...');
     final File fileYolo = File(yoloPath);
-    print('fileYolo : ${fileYolo.toString()}');
-    print("interpreter : $_interpreter");
     if (_interpreter != null) {
       _interpreter?.close();
     }
-
     _interpreter = await Interpreter.fromFile(fileYolo, options: interpreterOptions);
-    print('_interpreter initialized: ${_interpreter != null}');
+    log('_interpreter initialized: ${_interpreter != null}');
   }
 
   // Load labels
@@ -96,7 +93,7 @@ class ModelLoader {
 
   // Initialization of ONNX environment and session
   static Future<void> initializeOnnxModel(String modelPath) async {
-    print("init onnx model");
+    log("init onnx model");
     if (_ortEnv == null) {
       _ortEnv = OrtEnv.instance;
       _ortEnv!.init(); // Initialize ONNX environment if not already initialized
@@ -121,9 +118,6 @@ class ModelLoader {
 
 // Perform prediction using ONNX model
   static Future<dynamic> onnxPred(List data, List<int> shape, String modelPath, String inputDictKey) async {
-
-    print("onnxPred modelPath: $modelPath");
-
     await initializeOnnxModel(modelPath); // Load the model when needed
 
     if (_session == null) {
@@ -195,33 +189,24 @@ class ModelLoader {
     _predictions = [];
 
     //Convert image to matrix
-    print("converting to matrix ...");
     final List<List<List<num>>> convertedImageToMatrix = ImageProcessing.convertImageToMatrix(imageInput);
-    print("ok img to matrix");
 
     // Convert image from channel last format to channel first format
-    print("converting to channel first format ...");
     final List<List<List<num>>> input = ImageProcessing.convertChannelsLastToChannelsFirst(convertedImageToMatrix);
-    print("ok convert channel first");
 
     //Yolo prediction
     //tflite prediction
     final output = List<num>.filled(100 * 7, 0).reshape([100, 7]);
 
-    print("running interpreter ...");
-    print("input : $input");
-    print("output : $output");
+    log("running interpreter ...");
     try {
-      print("hey1");
       _interpreter?.run([input], output);
       _interpreter?.close();
-      print("hey2");
       log('Interpreter ran successfully.');
     } catch (e) {
-      print("hey3");
       log('Error during model inference: $e');
     }
-    print("ok run interpreter");
+    log("ok run interpreter");
 
     final results = processOutputs(output);
 
@@ -351,7 +336,7 @@ class ModelLoader {
 
     // Improve OCR prediction
     List<dynamic> improvedText = Utils.improveTextPrediction(recognitionResult);
-    print(improvedText);
+    log(improvedText as String);
 
     // Add to global prediction list
     if (improvedText[0].isNotEmpty) {
@@ -559,7 +544,7 @@ class ModelLoader {
     }
 
     List<Tuple2<String, double>> filterRecRes = _processFilterRecognitionResults(recRes, dtBoxes);
-    print(filterRecRes);
+    log(filterRecRes as String);
 
     return filterRecRes;
   }
