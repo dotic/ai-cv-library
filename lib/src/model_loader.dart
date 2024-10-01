@@ -68,6 +68,7 @@ class ModelLoader {
         log('File successfully downloaded : ${file.path}');
       }
     } catch (e) {
+      throw e;
       log('Error checking file: $e');
     }
   }
